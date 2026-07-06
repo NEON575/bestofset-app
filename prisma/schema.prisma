@@ -264,3 +264,16 @@ model Employee {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 }
+
+/// Kodda sabitlənməyən, admin tərəfindən idarə olunan siyahılar
+/// (vəzifələr, ödəniş üsulları, ölçü vahidləri və s.) üçün ümumi model.
+model SettingOption {
+  id        String  @id @default(cuid())
+  category  String  // "POSITION", "PAYMENT_METHOD", "UNIT"
+  value     String
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  @@unique([category, value])
+  @@index([category])
+}

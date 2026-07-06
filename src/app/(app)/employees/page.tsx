@@ -13,16 +13,27 @@ interface Employee {
 
 const emptyForm = { name: "", position: "" };
 
+/** Aktiv vəzifələr + (əgər işçidə artıq deaktiv olunmuş vəzifə seçilibsə) onun adı. */
+function positionOptions(positions: string[], current: string): string[] {
+  if (current && !positions.includes(current)) return [...positions, current];
+  return positions;
+}
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [positions, setPositions] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
 
   async function load() {
-    const res = await fetch("/api/employees");
-    setEmployees(await res.json());
+    const [eRes, pRes] = await Promise.all([
+      fetch("/api/employees"),
+      fetch("/api/settings/options?category=POSITION"),
+    ]);
+    setEmployees(await eRes.json());
+    setPositions((await pRes.json()).map((o: { value: string }) => o.value));
   }
   useEffect(() => { load(); }, []);
 
@@ -131,7 +142,10 @@ export default function EmployeesPage() {
         </div>
         <div className="mb-4">
           <label className="block text-xs font-semibold text-inksoft mb-1">Vəzifə</label>
-          <input className="input" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+          <select className="input" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })}>
+            <option value="">— seçilməyib —</option>
+            {positionOptions(positions, form.position).map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
         </div>
         {error && <div className="text-xs text-magenta bg-magenta/10 border border-magenta rounded-md px-3 py-2 mb-3">{error}</div>}
         <div className="flex justify-end gap-2">

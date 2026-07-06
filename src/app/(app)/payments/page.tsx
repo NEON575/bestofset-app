@@ -15,24 +15,28 @@ interface Payment {
   note: string | null;
 }
 
-const METHODS = ["Nağd", "Kart", "Bank köçürməsi"];
-
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [methods, setMethods] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ customerId: "", amount: "", method: "Nağd", note: "" });
+  const [form, setForm] = useState({ customerId: "", amount: "", method: "", note: "" });
   const [error, setError] = useState("");
 
   async function load() {
-    const [pRes, cRes] = await Promise.all([fetch("/api/payments"), fetch("/api/customers")]);
+    const [pRes, cRes, mRes] = await Promise.all([
+      fetch("/api/payments"),
+      fetch("/api/customers"),
+      fetch("/api/settings/options?category=PAYMENT_METHOD"),
+    ]);
     setPayments(await pRes.json());
     setCustomers(await cRes.json());
+    setMethods((await mRes.json()).map((o: { value: string }) => o.value));
   }
   useEffect(() => { load(); }, []);
 
   function openNew() {
-    setForm({ customerId: customers[0]?.id || "", amount: "", method: "Nağd", note: "" });
+    setForm({ customerId: customers[0]?.id || "", amount: "", method: methods[0] || "", note: "" });
     setError("");
     setShowModal(true);
   }
@@ -113,7 +117,7 @@ export default function PaymentsPage() {
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">Üsul</label>
                 <select className="input" value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}>
-                  {METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                  {methods.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
             </div>

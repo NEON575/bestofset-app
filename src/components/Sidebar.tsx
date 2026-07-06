@@ -20,6 +20,7 @@ const ALL_TABS = [
   { href: "/debts", label: "Borclar", section: "debts" },
   { href: "/employees", label: "İşçilər", section: "employees" },
   { href: "/salaries", label: "Əmək haqqı", section: "salaries" },
+  { href: "/settings", label: "Parametrlər", section: "settings" },
 ];
 
 export default function Sidebar({ role, name }: { role: string; name: string }) {

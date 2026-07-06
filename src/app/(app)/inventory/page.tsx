@@ -9,22 +9,33 @@ interface Item {
   balance: number; purchasePrice: number; note: string | null;
 }
 
-const emptyForm = { name: "", unit: "ədəd", incoming: "0", outgoing: "0", purchasePrice: "0", note: "" };
+const emptyForm = { name: "", unit: "", incoming: "0", outgoing: "0", purchasePrice: "0", note: "" };
+
+/** Aktiv ölçü vahidləri + (əgər materialda artıq deaktiv olunmuş vahid seçilibsə) onun adı. */
+function unitOptions(units: string[], current: string): string[] {
+  if (current && !units.includes(current)) return [...units, current];
+  return units;
+}
 
 export default function InventoryPage() {
   const [items, setItems] = useState<Item[]>([]);
+  const [units, setUnits] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [error, setError] = useState("");
 
   async function load() {
-    const res = await fetch("/api/inventory");
-    setItems(await res.json());
+    const [iRes, uRes] = await Promise.all([
+      fetch("/api/inventory"),
+      fetch("/api/settings/options?category=UNIT"),
+    ]);
+    setItems(await iRes.json());
+    setUnits((await uRes.json()).map((o: { value: string }) => o.value));
   }
   useEffect(() => { load(); }, []);
 
-  function openNew() { setEditing(null); setForm(emptyForm); setError(""); setShowModal(true); }
+  function openNew() { setEditing(null); setForm({ ...emptyForm, unit: units[0] || "" }); setError(""); setShowModal(true); }
   function openEdit(i: Item) {
     setEditing(i);
     setForm({ name: i.name, unit: i.unit, incoming: String(i.incoming), outgoing: String(i.outgoing), purchasePrice: String(i.purchasePrice), note: i.note || "" });
@@ -98,7 +109,9 @@ export default function InventoryPage() {
               <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div><label className="block text-xs font-semibold text-inksoft mb-1">Ölçü vahidi</label>
-                <input className="input" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} /></div>
+                <select className="input" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
+                  {unitOptions(units, form.unit).map((u) => <option key={u} value={u}>{u}</option>)}
+                </select></div>
               <div><label className="block text-xs font-semibold text-inksoft mb-1">Alış qiyməti (₼)</label>
                 <input type="number" min="0" step="0.01" className="input" value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })} /></div>
             </div>
