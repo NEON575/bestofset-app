@@ -41,7 +41,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const unitPrice = body.unitPrice !== undefined ? parseFloat(body.unitPrice) : existing.unitPrice;
   const bonusPercent = body.bonusPercent !== undefined ? parseFloat(body.bonusPercent) : existing.bonusPercent;
   const bonus2Percent = body.bonus2Percent !== undefined ? parseFloat(body.bonus2Percent) : existing.bonus2Percent;
-  const amounts = calcOrderAmounts({ quantity, unitPrice, bonusPercent, bonus2Percent });
+  const amounts = calcOrderAmounts({
+    quantity,
+    unitPrice,
+    bonusPercent,
+    bonus2Percent,
+    total: body.total !== undefined && body.total !== "" ? parseFloat(body.total) : undefined,
+    bonusAmount:
+      body.bonusAmount !== undefined && body.bonusAmount !== "" ? parseFloat(body.bonusAmount) : undefined,
+    bonus2Amount:
+      body.bonus2Amount !== undefined && body.bonus2Amount !== "" ? parseFloat(body.bonus2Amount) : undefined,
+  });
 
   const order = await prisma.order.update({
     where: { id: params.id },

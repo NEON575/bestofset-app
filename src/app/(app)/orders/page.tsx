@@ -6,6 +6,7 @@ import {
   ORDER_STATUS_LABELS,
   PRODUCTION_STATUS_LABELS,
 } from "@/lib/format";
+import { round2, calcBonusAmount } from "@/lib/calc";
 
 interface Customer { id: string; name: string; }
 interface Order {
@@ -38,14 +39,24 @@ const emptyForm = {
   productName: "",
   quantity: "1",
   unitPrice: "",
+  total: "",
   managerName: "",
   bonusPercent: "0",
+  bonusAmount: "0",
   manager2Name: "",
   bonus2Percent: "0",
+  bonus2Amount: "0",
   productionStatus: "DIZAYN",
   status: "GOZLEYIR",
   orderDate: new Date().toISOString().slice(0, 10),
 };
+
+/** Boş sətir və ya rəqəm olmayan dəyəri ədədə çevirir, olmasa null qaytarır. */
+function toNum(v: any): number | null {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -78,16 +89,105 @@ export default function OrdersPage() {
       productName: o.productName,
       quantity: String(o.quantity),
       unitPrice: String(o.unitPrice),
+      total: String(o.total),
       managerName: o.managerName || "",
       bonusPercent: String(o.bonusPercent),
+      bonusAmount: String(o.bonusAmount),
       manager2Name: o.manager2Name || "",
       bonus2Percent: String(o.bonus2Percent),
+      bonus2Amount: String(o.bonus2Amount),
       productionStatus: o.productionStatus,
       status: o.status === "TEHVIL_VERILDI" ? "ISDEDIR" : o.status,
       orderDate: o.orderDate.slice(0, 10),
     });
     setError("");
     setShowModal(true);
+  }
+
+  // Say, Ədəd qiyməti, Cəmi bir-birini qarşılıqlı hesablayır: hər hansı ikisi
+  // bilinirsə üçüncüsü avtomatik çıxarılır. Total dəyişəndə bonus məbləğləri
+  // də mövcud Bonus % əsasında yenidən hesablanır.
+  function recalcBonuses(total: number | null, base: any) {
+    const bonusPercent = toNum(base.bonusPercent);
+    const bonus2Percent = toNum(base.bonus2Percent);
+    return {
+      bonusAmount: total !== null && bonusPercent !== null ? String(calcBonusAmount(total, bonusPercent)) : base.bonusAmount,
+      bonus2Amount: total !== null && bonus2Percent !== null ? String(calcBonusAmount(total, bonus2Percent)) : base.bonus2Amount,
+    };
+  }
+
+  function onQuantityChange(v: string) {
+    const quantity = toNum(v);
+    const unitPrice = toNum(form.unitPrice);
+    const total = toNum(form.total);
+    let newTotal = form.total;
+    let newUnitPrice = form.unitPrice;
+    if (quantity !== null && unitPrice !== null) {
+      newTotal = String(round2(quantity * unitPrice));
+    } else if (quantity !== null && quantity !== 0 && total !== null) {
+      newUnitPrice = String(round2(total / quantity));
+    }
+    const bonuses = recalcBonuses(toNum(newTotal), form);
+    setForm({ ...form, quantity: v, total: newTotal, unitPrice: newUnitPrice, ...bonuses });
+  }
+
+  function onUnitPriceChange(v: string) {
+    const unitPrice = toNum(v);
+    const quantity = toNum(form.quantity);
+    const total = toNum(form.total);
+    let newTotal = form.total;
+    let newQuantity = form.quantity;
+    if (unitPrice !== null && quantity !== null) {
+      newTotal = String(round2(quantity * unitPrice));
+    } else if (unitPrice !== null && unitPrice !== 0 && total !== null) {
+      newQuantity = String(round2(total / unitPrice));
+    }
+    const bonuses = recalcBonuses(toNum(newTotal), form);
+    setForm({ ...form, unitPrice: v, total: newTotal, quantity: newQuantity, ...bonuses });
+  }
+
+  function onTotalChange(v: string) {
+    const total = toNum(v);
+    const quantity = toNum(form.quantity);
+    const unitPrice = toNum(form.unitPrice);
+    let newQuantity = form.quantity;
+    let newUnitPrice = form.unitPrice;
+    if (total !== null && quantity !== null && quantity !== 0) {
+      newUnitPrice = String(round2(total / quantity));
+    } else if (total !== null && unitPrice !== null && unitPrice !== 0) {
+      newQuantity = String(round2(total / unitPrice));
+    }
+    const bonuses = recalcBonuses(total, form);
+    setForm({ ...form, total: v, quantity: newQuantity, unitPrice: newUnitPrice, ...bonuses });
+  }
+
+  // Bonus % və Bonus məbləği bir-birini Cəmi əsasında qarşılıqlı hesablayır.
+  function onBonusPercentChange(v: string) {
+    const percent = toNum(v);
+    const total = toNum(form.total);
+    const newAmount = percent !== null && total !== null ? String(calcBonusAmount(total, percent)) : form.bonusAmount;
+    setForm({ ...form, bonusPercent: v, bonusAmount: newAmount });
+  }
+
+  function onBonusAmountChange(v: string) {
+    const amount = toNum(v);
+    const total = toNum(form.total);
+    const newPercent = amount !== null && total !== null && total !== 0 ? String(round2((amount / total) * 100)) : form.bonusPercent;
+    setForm({ ...form, bonusAmount: v, bonusPercent: newPercent });
+  }
+
+  function onBonus2PercentChange(v: string) {
+    const percent = toNum(v);
+    const total = toNum(form.total);
+    const newAmount = percent !== null && total !== null ? String(calcBonusAmount(total, percent)) : form.bonus2Amount;
+    setForm({ ...form, bonus2Percent: v, bonus2Amount: newAmount });
+  }
+
+  function onBonus2AmountChange(v: string) {
+    const amount = toNum(v);
+    const total = toNum(form.total);
+    const newPercent = amount !== null && total !== null && total !== 0 ? String(round2((amount / total) * 100)) : form.bonus2Percent;
+    setForm({ ...form, bonus2Amount: v, bonus2Percent: newPercent });
   }
 
   async function save() {
@@ -235,36 +335,48 @@ export default function OrdersPage() {
               <input className="input" value={form.productName} onChange={(e) => setForm({ ...form, productName: e.target.value })} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">Say</label>
-                <input type="number" min="0" step="0.01" className="input" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+                <input type="number" min="0" step="0.01" className="input" value={form.quantity} onChange={(e) => onQuantityChange(e.target.value)} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">Ədəd qiyməti (₼)</label>
-                <input type="number" min="0" step="0.01" className="input" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} />
+                <input type="number" min="0" step="0.01" className="input" value={form.unitPrice} onChange={(e) => onUnitPriceChange(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-inksoft mb-1">Cəmi (₼)</label>
+                <input type="number" min="0" step="0.01" className="input" value={form.total} onChange={(e) => onTotalChange(e.target.value)} />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">Menecer</label>
                 <input className="input" value={form.managerName} onChange={(e) => setForm({ ...form, managerName: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">Bonus %</label>
-                <input type="number" min="0" step="0.01" className="input" value={form.bonusPercent} onChange={(e) => setForm({ ...form, bonusPercent: e.target.value })} />
+                <input type="number" min="0" step="0.01" className="input" value={form.bonusPercent} onChange={(e) => onBonusPercentChange(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-inksoft mb-1">Bonus məbləği (₼)</label>
+                <input type="number" min="0" step="0.01" className="input" value={form.bonusAmount} onChange={(e) => onBonusAmountChange(e.target.value)} />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">2-ci Menecer</label>
                 <input className="input" value={form.manager2Name} onChange={(e) => setForm({ ...form, manager2Name: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">2-ci Bonus %</label>
-                <input type="number" min="0" step="0.01" className="input" value={form.bonus2Percent} onChange={(e) => setForm({ ...form, bonus2Percent: e.target.value })} />
+                <input type="number" min="0" step="0.01" className="input" value={form.bonus2Percent} onChange={(e) => onBonus2PercentChange(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-inksoft mb-1">2-ci Bonus məbləği (₼)</label>
+                <input type="number" min="0" step="0.01" className="input" value={form.bonus2Amount} onChange={(e) => onBonus2AmountChange(e.target.value)} />
               </div>
             </div>
 

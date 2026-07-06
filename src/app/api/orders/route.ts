@@ -51,6 +51,11 @@ export async function POST(req: NextRequest) {
     unitPrice: parseFloat(body.unitPrice),
     bonusPercent: parseFloat(body.bonusPercent || 0),
     bonus2Percent: parseFloat(body.bonus2Percent || 0),
+    total: body.total !== undefined && body.total !== "" ? parseFloat(body.total) : undefined,
+    bonusAmount:
+      body.bonusAmount !== undefined && body.bonusAmount !== "" ? parseFloat(body.bonusAmount) : undefined,
+    bonus2Amount:
+      body.bonus2Amount !== undefined && body.bonus2Amount !== "" ? parseFloat(body.bonus2Amount) : undefined,
   });
 
   const last = await prisma.order.findFirst({ orderBy: { createdAt: "desc" } });

@@ -31,6 +31,12 @@ export interface OrderCalcInput {
   unitPrice: number;
   bonusPercent: number;
   bonus2Percent: number;
+  /** Verilsə, Say×Ədəd qiyməti əvəzinə birbaşa bu istifadə olunur (əl ilə yazılan Cəmi). */
+  total?: number;
+  /** Verilsə, Cəmi×Bonus% əvəzinə birbaşa bu istifadə olunur (əl ilə yazılan Bonus məbləği). */
+  bonusAmount?: number;
+  /** Verilsə, Cəmi×2-ci Bonus% əvəzinə birbaşa bu istifadə olunur (əl ilə yazılan 2-ci Bonus məbləği). */
+  bonus2Amount?: number;
 }
 
 export interface OrderCalcResult {
@@ -41,9 +47,18 @@ export interface OrderCalcResult {
 }
 
 export function calcOrderAmounts(input: OrderCalcInput): OrderCalcResult {
-  const total = calcTotal(input.quantity, input.unitPrice);
-  const bonusAmount = calcBonusAmount(total, input.bonusPercent);
-  const bonus2Amount = calcBonusAmount(total, input.bonus2Percent);
+  const total =
+    input.total !== undefined && input.total !== null
+      ? round2(input.total)
+      : calcTotal(input.quantity, input.unitPrice);
+  const bonusAmount =
+    input.bonusAmount !== undefined && input.bonusAmount !== null
+      ? round2(input.bonusAmount)
+      : calcBonusAmount(total, input.bonusPercent);
+  const bonus2Amount =
+    input.bonus2Amount !== undefined && input.bonus2Amount !== null
+      ? round2(input.bonus2Amount)
+      : calcBonusAmount(total, input.bonus2Percent);
   const finalTotal = calcFinalTotal(total, bonusAmount, bonus2Amount);
   return { total, bonusAmount, bonus2Amount, finalTotal };
 }
