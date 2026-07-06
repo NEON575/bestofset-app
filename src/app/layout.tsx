@@ -1,11 +1,24 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers";
+import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Bestofset — İdarəetmə",
   description: "Bestofset mətbəəsi üçün idarəetmə sistemi",
 };
+
+const themeInitScript = `
+(function () {
+  try {
+    var theme = localStorage.getItem("theme");
+    if (!theme) {
+      theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    if (theme === "dark") document.documentElement.classList.add("dark");
+  } catch (e) {}
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -14,8 +27,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="az">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
-        <Providers>{children}</Providers>
+        <ThemeProvider>
+          <Providers>{children}</Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

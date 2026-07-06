@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,14 +32,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="card w-full max-w-sm p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 rounded-md border-2 border-ink rotate-[-4deg] flex items-center justify-center" />
-          <div>
-            <div className="font-bold text-lg">Bestofset</div>
-            <div className="text-xs text-inksoft uppercase tracking-wide">
-              idarəetmə
-            </div>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="card w-full max-w-sm p-8"
+      >
+        <div className="flex flex-col items-center text-center mb-6">
+          {/* Loqonun rəngləri sabitdir — ağ fon üzərində göstərilir ki, tünd
+              temada da (kart fonu tündləşəndə) oxunaqlı qalsın. */}
+          <div className="bg-white rounded-xl p-4">
+            <Image src="/logo.png" alt="Bestofset" width={220} height={119} priority />
+          </div>
+          <div className="text-[11px] text-inksoft uppercase tracking-[0.25em] mt-3">
+            Experts in Print
           </div>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -74,7 +82,7 @@ export default function LoginPage() {
             {loading ? "Yoxlanılır..." : "Daxil ol"}
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }

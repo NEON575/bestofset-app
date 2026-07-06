@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCTION_STATUS_LABELS } from "@/lib/format";
 
 interface Step { status: string; }
@@ -73,33 +74,43 @@ export default function ProductionPage() {
                     Boşdur
                   </div>
                 )}
-                {stageOrders.map((o) => {
-                  const progress = stepProgress(o);
-                  return (
-                  <div key={o.id} className="card p-3">
-                    <Link href={`/orders/${o.id}`} className="font-mono text-xs text-cyan hover:underline block mb-1">
-                      {o.number}
-                    </Link>
-                    <div className="font-semibold text-sm mb-1">{o.customer?.name}</div>
-                    <div className="text-sm mb-1">{o.productName}</div>
-                    <div className="text-xs text-inksoft mb-2">Say: {o.quantity}</div>
-                    {progress.total > 0 && (
-                      <div className="text-xs text-inksoft mb-2">
-                        {progress.done}/{progress.total} addım bitib
-                      </div>
-                    )}
-                    {stage !== "BITIB" && (
-                      <button
-                        onClick={() => advance(o)}
-                        disabled={busyId === o.id}
-                        className="btn-outline !py-1 !px-2 text-xs w-full justify-center"
+                <AnimatePresence initial={false}>
+                  {stageOrders.map((o) => {
+                    const progress = stepProgress(o);
+                    return (
+                      <motion.div
+                        key={o.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        transition={{ duration: 0.2 }}
+                        className="card card-hover p-3"
                       >
-                        Növbəti mərhələyə keçir
-                      </button>
-                    )}
-                  </div>
-                  );
-                })}
+                        <Link href={`/orders/${o.id}`} className="font-mono text-xs text-accent hover:underline block mb-1">
+                          {o.number}
+                        </Link>
+                        <div className="font-semibold text-sm mb-1">{o.customer?.name}</div>
+                        <div className="text-sm mb-1">{o.productName}</div>
+                        <div className="text-xs text-inksoft mb-2">Say: {o.quantity}</div>
+                        {progress.total > 0 && (
+                          <div className="text-xs text-inksoft mb-2">
+                            {progress.done}/{progress.total} addım bitib
+                          </div>
+                        )}
+                        {stage !== "BITIB" && (
+                          <button
+                            onClick={() => advance(o)}
+                            disabled={busyId === o.id}
+                            className="btn-outline !py-1 !px-2 text-xs w-full justify-center"
+                          >
+                            Növbəti mərhələyə keçir
+                          </button>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </div>
           );

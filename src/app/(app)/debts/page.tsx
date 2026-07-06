@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney, fmtDate, DEBT_TYPE_LABELS } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface Debt {
   id: string; date: string; party: string; type: string; amount: number;
@@ -60,34 +62,41 @@ export default function DebtsPage() {
           </thead>
           <tbody>
             {debts.length === 0 && <tr><td colSpan={7} className="text-center text-inksoft py-8">Hələ borc qeydi yoxdur</td></tr>}
-            {debts.map((d) => (
-              <tr key={d.id}>
-                <td className="font-mono text-inksoft">{fmtDate(d.date)}</td>
-                <td>{d.party}</td>
-                <td>{DEBT_TYPE_LABELS[d.type]}</td>
-                <td className="font-mono">{fmtMoney(d.amount)}</td>
-                <td className="font-mono">
-                  <input
-                    type="number" min="0" step="0.01" defaultValue={d.paid}
-                    className="input !w-24 !py-1"
-                    onBlur={(e) => updatePaid(d, parseFloat(e.target.value) || 0)}
-                  />
-                </td>
-                <td className="font-mono font-semibold">{fmtMoney(d.remaining)}</td>
-                <td>
-                  <span className={`stamp ${d.status === "ACIQ" ? "border-magenta text-magenta bg-magenta/10" : "border-teal text-teal bg-teal/10"}`}>
-                    {d.status === "ACIQ" ? "Açıq" : "Qapanıb"}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {debts.map((d) => (
+                <motion.tr
+                  key={d.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td className="font-mono text-inksoft">{fmtDate(d.date)}</td>
+                  <td>{d.party}</td>
+                  <td>{DEBT_TYPE_LABELS[d.type]}</td>
+                  <td className="font-mono">{fmtMoney(d.amount)}</td>
+                  <td className="font-mono">
+                    <input
+                      type="number" min="0" step="0.01" defaultValue={d.paid}
+                      className="input !w-24 !py-1"
+                      onBlur={(e) => updatePaid(d, parseFloat(e.target.value) || 0)}
+                    />
+                  </td>
+                  <td className="font-mono font-semibold">{fmtMoney(d.remaining)}</td>
+                  <td>
+                    <span className={`stamp ${d.status === "ACIQ" ? "border-magenta text-magenta bg-magenta/10" : "border-teal text-teal bg-teal/10"}`}>
+                      {d.status === "ACIQ" ? "Açıq" : "Qapanıb"}
+                    </span>
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-md p-6">
+      <Modal show={showModal} maxWidth="max-w-md">
             <h3 className="text-lg font-bold mb-4">Yeni borc qeydi</h3>
             <div className="mb-3"><label className="block text-xs font-semibold text-inksoft mb-1">Tərəf (şəxs/şirkət)</label>
               <input className="input" value={form.party} onChange={(e) => setForm({ ...form, party: e.target.value })} /></div>
@@ -109,9 +118,7 @@ export default function DebtsPage() {
               <button onClick={() => setShowModal(false)} className="btn-outline">Ləğv et</button>
               <button onClick={save} className="btn">Əlavə et</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

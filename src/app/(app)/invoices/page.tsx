@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   fmtMoney,
   fmtDate,
@@ -7,6 +8,7 @@ import {
   EQAIME_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
 } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface Invoice {
   id: string;
@@ -107,38 +109,45 @@ export default function InvoicesPage() {
             {invoices.length === 0 && (
               <tr><td colSpan={9} className="text-center text-inksoft py-8">Hələ faktura yoxdur</td></tr>
             )}
-            {invoices.map((inv) => (
-              <tr key={inv.id}>
-                <td className="font-mono">{inv.number}</td>
-                <td className="font-mono text-inksoft">{fmtDate(inv.deliveryDate)}</td>
-                <td>{inv.customer.name}</td>
-                <td>{inv.productName}</td>
-                <td className="font-mono font-semibold">{fmtMoney(inv.finalTotal)}</td>
-                <td><span className={`stamp ${eqaimeBadge(inv.eqaimeStatus)}`}>{EQAIME_STATUS_LABELS[inv.eqaimeStatus]}</span></td>
-                <td>{PAYMENT_STATUS_LABELS[inv.eqaimePaymentStatus]}</td>
-                <td>{INVOICE_STATUS_LABELS[inv.status]}</td>
-                <td>
-                  <div className="flex gap-1.5 justify-end">
-                    <a href={`/api/export/invoice/${inv.id}/pdf`} className="btn-outline !py-1 !px-2 text-xs">PDF</a>
-                    <button onClick={() => openEdit(inv)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
-                    {inv.status === "AKTIV" && (
-                      <button onClick={() => returnToOrder(inv.id)} className="btn-danger">Sifarişə qaytar</button>
-                    )}
-                    {inv.status === "QAYTARILDI" && (
-                      <button onClick={() => remove(inv.id)} className="btn-danger">Sil</button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {invoices.map((inv) => (
+                <motion.tr
+                  key={inv.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td className="font-mono">{inv.number}</td>
+                  <td className="font-mono text-inksoft">{fmtDate(inv.deliveryDate)}</td>
+                  <td>{inv.customer.name}</td>
+                  <td>{inv.productName}</td>
+                  <td className="font-mono font-semibold">{fmtMoney(inv.finalTotal)}</td>
+                  <td><span className={`stamp ${eqaimeBadge(inv.eqaimeStatus)}`}>{EQAIME_STATUS_LABELS[inv.eqaimeStatus]}</span></td>
+                  <td>{PAYMENT_STATUS_LABELS[inv.eqaimePaymentStatus]}</td>
+                  <td>{INVOICE_STATUS_LABELS[inv.status]}</td>
+                  <td>
+                    <div className="flex gap-1.5 justify-end">
+                      <a href={`/api/export/invoice/${inv.id}/pdf`} className="btn-outline !py-1 !px-2 text-xs">PDF</a>
+                      <button onClick={() => openEdit(inv)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
+                      {inv.status === "AKTIV" && (
+                        <button onClick={() => returnToOrder(inv.id)} className="btn-danger">Sifarişə qaytar</button>
+                      )}
+                      {inv.status === "QAYTARILDI" && (
+                        <button onClick={() => remove(inv.id)} className="btn-danger">Sil</button>
+                      )}
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {editing && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-md p-6">
-            <h3 className="text-lg font-bold mb-1">Faktura: {editing.number}</h3>
+      <Modal show={!!editing} maxWidth="max-w-md">
+            <h3 className="text-lg font-bold mb-1">Faktura: {editing?.number}</h3>
             <p className="text-xs text-inksoft mb-4">
               Yalnız e-qaimə və qeyd sahələri redaktə oluna bilər. Əsas məbləğ sahələri sifarişdən köçürülüb və sabitdir.
             </p>
@@ -170,9 +179,7 @@ export default function InvoicesPage() {
               <button onClick={() => setEditing(null)} className="btn-outline">Ləğv et</button>
               <button onClick={save} className="btn">Yadda saxla</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

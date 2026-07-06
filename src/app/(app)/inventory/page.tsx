@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface Item {
   id: string; name: string; unit: string; incoming: number; outgoing: number;
@@ -61,29 +63,36 @@ export default function InventoryPage() {
           </thead>
           <tbody>
             {items.length === 0 && <tr><td colSpan={7} className="text-center text-inksoft py-8">Hələ material yoxdur</td></tr>}
-            {items.map((i) => (
-              <tr key={i.id}>
-                <td>{i.name}</td>
-                <td>{i.unit}</td>
-                <td className="font-mono">{i.incoming}</td>
-                <td className="font-mono">{i.outgoing}</td>
-                <td className="font-mono font-semibold">{i.balance}</td>
-                <td className="font-mono">{fmtMoney(i.purchasePrice)}</td>
-                <td>
-                  <div className="flex gap-1.5 justify-end">
-                    <button onClick={() => openEdit(i)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
-                    <button onClick={() => remove(i.id)} className="btn-danger">Sil</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {items.map((i) => (
+                <motion.tr
+                  key={i.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td>{i.name}</td>
+                  <td>{i.unit}</td>
+                  <td className="font-mono">{i.incoming}</td>
+                  <td className="font-mono">{i.outgoing}</td>
+                  <td className="font-mono font-semibold">{i.balance}</td>
+                  <td className="font-mono">{fmtMoney(i.purchasePrice)}</td>
+                  <td>
+                    <div className="flex gap-1.5 justify-end">
+                      <button onClick={() => openEdit(i)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
+                      <button onClick={() => remove(i.id)} className="btn-danger">Sil</button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-md p-6">
+      <Modal show={showModal} maxWidth="max-w-md">
             <h3 className="text-lg font-bold mb-4">{editing ? "Materialı redaktə et" : "Yeni material"}</h3>
             <div className="mb-3"><label className="block text-xs font-semibold text-inksoft mb-1">Material adı</label>
               <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
@@ -104,9 +113,7 @@ export default function InventoryPage() {
               <button onClick={() => setShowModal(false)} className="btn-outline">Ləğv et</button>
               <button onClick={save} className="btn">{editing ? "Yadda saxla" : "Əlavə et"}</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

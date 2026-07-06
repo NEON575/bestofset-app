@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney, fmtDate, PAYMENT_STATUS_LABELS } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface InventoryItem { id: string; name: string; unit: string; }
 interface Purchase {
@@ -53,24 +55,31 @@ export default function PurchasesPage() {
           </thead>
           <tbody>
             {purchases.length === 0 && <tr><td colSpan={7} className="text-center text-inksoft py-8">Hələ alış yoxdur</td></tr>}
-            {purchases.map((p) => (
-              <tr key={p.id}>
-                <td className="font-mono text-inksoft">{fmtDate(p.date)}</td>
-                <td>{p.supplier}</td>
-                <td>{p.item.name}</td>
-                <td className="font-mono">{p.quantity} {p.item.unit}</td>
-                <td className="font-mono">{fmtMoney(p.price)}</td>
-                <td className="font-mono">{fmtMoney(p.total)}</td>
-                <td>{PAYMENT_STATUS_LABELS[p.paymentStatus]}</td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {purchases.map((p) => (
+                <motion.tr
+                  key={p.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td className="font-mono text-inksoft">{fmtDate(p.date)}</td>
+                  <td>{p.supplier}</td>
+                  <td>{p.item.name}</td>
+                  <td className="font-mono">{p.quantity} {p.item.unit}</td>
+                  <td className="font-mono">{fmtMoney(p.price)}</td>
+                  <td className="font-mono">{fmtMoney(p.total)}</td>
+                  <td>{PAYMENT_STATUS_LABELS[p.paymentStatus]}</td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-md p-6">
+      <Modal show={showModal} maxWidth="max-w-md">
             <h3 className="text-lg font-bold mb-4">Yeni alış</h3>
             <div className="mb-3"><label className="block text-xs font-semibold text-inksoft mb-1">Təchizatçı</label>
               <input className="input" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} /></div>
@@ -95,9 +104,7 @@ export default function PurchasesPage() {
               <button onClick={() => setShowModal(false)} className="btn-outline">Ləğv et</button>
               <button onClick={save} className="btn">Alışı qeyd et</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

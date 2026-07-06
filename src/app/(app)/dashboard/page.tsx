@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { fmtMoney, fmtDate, ORDER_STATUS_LABELS, PRODUCTION_STATUS_LABELS } from "@/lib/format";
+import AnimatedCounter from "@/components/AnimatedCounter";
 
 interface DashboardData {
   activeOrderCount: number;
@@ -32,14 +34,14 @@ export default function DashboardPage() {
   const stats = [
     { label: "Aktiv sifariş sayı", value: data.activeOrderCount, color: "bg-cyan" },
     { label: "Təhvil verilmiş sifariş", value: data.deliveredOrderCount, color: "bg-yellow" },
-    { label: "Ümumi satış", value: fmtMoney(data.totalSales), color: "bg-teal" },
-    { label: "Bugünkü satış", value: fmtMoney(data.todaySales), color: "bg-cyan" },
-    { label: "Aylıq satış", value: fmtMoney(data.monthSales), color: "bg-teal" },
-    { label: "Ödənilməmiş faktura", value: fmtMoney(data.unpaidAmount), color: "bg-magenta" },
+    { label: "Ümumi satış", value: data.totalSales, color: "bg-teal", money: true },
+    { label: "Bugünkü satış", value: data.todaySales, color: "bg-cyan", money: true },
+    { label: "Aylıq satış", value: data.monthSales, color: "bg-teal", money: true },
+    { label: "Ödənilməmiş faktura", value: data.unpaidAmount, color: "bg-magenta", money: true },
     { label: "Qismən ödənilmiş fakturalar", value: data.partiallyPaidCount, color: "bg-yellow" },
-    { label: "Müştəri borcları", value: fmtMoney(data.customerDebts), color: "bg-magenta" },
-    { label: "Ümumi maya dəyəri", value: fmtMoney(data.totalCost), color: "bg-inksoft" },
-    { label: "Təxmini mənfəət", value: fmtMoney(data.totalProfit), color: "bg-ink" },
+    { label: "Müştəri borcları", value: data.customerDebts, color: "bg-magenta", money: true },
+    { label: "Ümumi maya dəyəri", value: data.totalCost, color: "bg-inksoft", money: true },
+    { label: "Təxmini mənfəət", value: data.totalProfit, color: "bg-ink", money: true },
   ];
 
   return (
@@ -47,15 +49,27 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
       <p className="text-inksoft text-sm mb-6">Bestofset mətbəəsinin ümumi vəziyyəti</p>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
+      <motion.div
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+      >
         {stats.map((s) => (
-          <div key={s.label} className="card p-4">
+          <motion.div
+            key={s.label}
+            variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="card card-hover p-4"
+          >
             <p className="text-[11px] uppercase tracking-wide text-inksoft mb-2">{s.label}</p>
-            <p className="text-xl font-mono font-semibold">{s.value}</p>
+            <p className="text-xl font-mono font-semibold">
+              <AnimatedCounter value={s.value} duration={1} format={s.money ? fmtMoney : undefined} />
+            </p>
             <div className={`w-6 h-1 rounded mt-2 ${s.color}`} />
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <div>

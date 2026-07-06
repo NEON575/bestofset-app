@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney, PAYMENT_STATUS_LABELS } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface Salary {
   id: string;
@@ -138,37 +140,44 @@ export default function SalariesPage() {
                 </td>
               </tr>
             )}
-            {salaries.map((s) => (
-              <tr key={s.id}>
-                <td>{s.employeeName}</td>
-                <td className="font-mono text-inksoft">{s.month}</td>
-                <td className="font-mono">{fmtMoney(s.baseSalary)}</td>
-                <td className="font-mono">{fmtMoney(s.bonus)}</td>
-                <td className="font-mono font-semibold">{fmtMoney(s.total)}</td>
-                <td className="font-mono">{fmtMoney(s.paid)}</td>
-                <td className="font-mono">{fmtMoney(s.remaining)}</td>
-                <td>
-                  <span className="stamp">{PAYMENT_STATUS_LABELS[s.status]}</span>
-                </td>
-                <td>
-                  <div className="flex gap-1.5 justify-end">
-                    <button onClick={() => openEdit(s)} className="btn-outline !py-1 !px-2 text-xs">
-                      Redaktə
-                    </button>
-                    <button onClick={() => remove(s.id)} className="btn-danger">
-                      Sil
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {salaries.map((s) => (
+                <motion.tr
+                  key={s.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td>{s.employeeName}</td>
+                  <td className="font-mono text-inksoft">{s.month}</td>
+                  <td className="font-mono">{fmtMoney(s.baseSalary)}</td>
+                  <td className="font-mono">{fmtMoney(s.bonus)}</td>
+                  <td className="font-mono font-semibold">{fmtMoney(s.total)}</td>
+                  <td className="font-mono">{fmtMoney(s.paid)}</td>
+                  <td className="font-mono">{fmtMoney(s.remaining)}</td>
+                  <td>
+                    <span className="stamp">{PAYMENT_STATUS_LABELS[s.status]}</span>
+                  </td>
+                  <td>
+                    <div className="flex gap-1.5 justify-end">
+                      <button onClick={() => openEdit(s)} className="btn-outline !py-1 !px-2 text-xs">
+                        Redaktə
+                      </button>
+                      <button onClick={() => remove(s.id)} className="btn-danger">
+                        Sil
+                      </button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-md p-6">
+      <Modal show={showModal} maxWidth="max-w-md">
             <h3 className="text-lg font-bold mb-4">
               {editing ? "İşçi qeydini redaktə et" : "Yeni işçi qeydi"}
             </h3>
@@ -242,9 +251,7 @@ export default function SalariesPage() {
                 {editing ? "Yadda saxla" : "Əlavə et"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

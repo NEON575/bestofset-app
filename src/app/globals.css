@@ -2,29 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-paper: 246 241 230;
+  --color-paperalt: 238 230 211;
+  --color-card: 251 248 241;
+  --color-ink: 23 58 78;
+  --color-inksoft: 91 90 85;
+  --color-line: 220 210 184;
+}
+
+.dark {
+  --color-paper: 13 31 43;
+  --color-paperalt: 20 42 56;
+  --color-card: 27 51 66;
+  --color-ink: 232 238 242;
+  --color-inksoft: 150 168 180;
+  --color-line: 44 68 84;
+}
+
 body {
-  background: #f6f1e6;
-  color: #18181f;
+  background: rgb(var(--color-paper));
+  color: rgb(var(--color-ink));
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3 {
+  @apply tracking-tight;
 }
 
 .card {
-  background: #fbf8f1;
-  border: 1px solid #dcd2b8;
-  border-radius: 12px;
+  @apply bg-card border border-line rounded-xl shadow-card transition-colors duration-200;
+}
+/* For small, standalone cards (stat tiles, kanban cards) — not table-wrap,
+   which reuses .card but shouldn't scale as a whole on hover. */
+.card-hover {
+  @apply transition duration-200 hover:shadow-lg hover:scale-[1.02];
 }
 
 .btn {
-  @apply inline-flex items-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-paper hover:opacity-85 transition;
+  @apply inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition hover:opacity-90 hover:scale-[1.02] active:scale-[0.98];
 }
 .btn-outline {
-  @apply inline-flex items-center gap-2 rounded-md border border-line bg-transparent px-4 py-2 text-sm font-semibold text-ink hover:bg-paperalt transition;
+  @apply inline-flex items-center gap-2 rounded-md border border-line bg-transparent px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paperalt hover:scale-[1.02] active:scale-[0.98];
 }
 .btn-danger {
-  @apply inline-flex items-center gap-2 rounded-md bg-magenta px-3 py-1.5 text-xs font-semibold text-white hover:opacity-85 transition;
+  @apply inline-flex items-center gap-2 rounded-md bg-magenta px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-85 hover:scale-[1.02] active:scale-[0.98];
 }
 
 .input {
-  @apply w-full rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-cyan;
+  @apply w-full rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-accent;
 }
 
 .table-wrap {
@@ -37,7 +63,11 @@ thead th {
 tbody td {
   @apply px-4 py-3 border-b border-line/60 align-middle whitespace-nowrap;
 }
+tbody tr {
+  @apply transition-colors duration-150 hover:bg-paperalt/60;
+}
 
 .stamp {
   @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold;
 }
+

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface Order { id: string; number: string; productName: string; finalTotal: number; }
 interface Cost {
@@ -78,27 +80,34 @@ export default function CostsPage() {
             {costs.length === 0 && (
               <tr><td colSpan={10} className="text-center text-inksoft py-8">Hələ hesablanmış maya dəyəri yoxdur</td></tr>
             )}
-            {costs.map((c) => (
-              <tr key={c.id}>
-                <td className="font-mono">{c.order.number}</td>
-                <td>{c.order.productName}</td>
-                <td className="font-mono">{fmtMoney(c.paperCost)}</td>
-                <td className="font-mono">{fmtMoney(c.printCost)}</td>
-                <td className="font-mono">{fmtMoney(c.laminationCost)}</td>
-                <td className="font-mono">{fmtMoney(c.cuttingCost)}</td>
-                <td className="font-mono">{fmtMoney(c.otherCost)}</td>
-                <td className="font-mono">{fmtMoney(c.totalCost)}</td>
-                <td className="font-mono">{fmtMoney(c.saleAmount)}</td>
-                <td className={`font-mono font-semibold ${c.profit >= 0 ? "text-teal" : "text-magenta"}`}>{fmtMoney(c.profit)}</td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {costs.map((c) => (
+                <motion.tr
+                  key={c.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td className="font-mono">{c.order.number}</td>
+                  <td>{c.order.productName}</td>
+                  <td className="font-mono">{fmtMoney(c.paperCost)}</td>
+                  <td className="font-mono">{fmtMoney(c.printCost)}</td>
+                  <td className="font-mono">{fmtMoney(c.laminationCost)}</td>
+                  <td className="font-mono">{fmtMoney(c.cuttingCost)}</td>
+                  <td className="font-mono">{fmtMoney(c.otherCost)}</td>
+                  <td className="font-mono">{fmtMoney(c.totalCost)}</td>
+                  <td className="font-mono">{fmtMoney(c.saleAmount)}</td>
+                  <td className={`font-mono font-semibold ${c.profit >= 0 ? "text-teal" : "text-magenta"}`}>{fmtMoney(c.profit)}</td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-lg p-6">
+      <Modal show={showModal} maxWidth="max-w-lg">
             <h3 className="text-lg font-bold mb-4">Sifariş üçün maya dəyərini hesabla</h3>
             <div className="mb-3">
               <label className="block text-xs font-semibold text-inksoft mb-1">Sifariş</label>
@@ -125,9 +134,7 @@ export default function CostsPage() {
               <button onClick={() => setShowModal(false)} className="btn-outline">Ləğv et</button>
               <button onClick={save} className="btn">Hesabla və saxla</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

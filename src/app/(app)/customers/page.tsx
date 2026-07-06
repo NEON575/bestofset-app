@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface Customer {
   id: string;
@@ -81,33 +83,40 @@ export default function CustomersPage() {
             {customers.length === 0 && (
               <tr><td colSpan={7} className="text-center text-inksoft py-8">Hələ müştəri yoxdur</td></tr>
             )}
-            {customers.map((c) => (
-              <tr key={c.id}>
-                <td>{c.name}</td>
-                <td className="font-mono">{c.phone || "—"}</td>
-                <td className="font-mono">{c.orderCount}</td>
-                <td className="font-mono">{fmtMoney(c.totalSales)}</td>
-                <td className="font-mono">{fmtMoney(c.totalPaid)}</td>
-                <td>
-                  <span className={`stamp ${c.debt > 0 ? "border-magenta text-magenta bg-magenta/10" : "border-teal text-teal bg-teal/10"}`}>
-                    {fmtMoney(Math.max(0, c.debt))}
-                  </span>
-                </td>
-                <td>
-                  <div className="flex gap-1.5 justify-end">
-                    <button onClick={() => openEdit(c)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
-                    <button onClick={() => remove(c.id)} className="btn-danger">Sil</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {customers.map((c) => (
+                <motion.tr
+                  key={c.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td>{c.name}</td>
+                  <td className="font-mono">{c.phone || "—"}</td>
+                  <td className="font-mono">{c.orderCount}</td>
+                  <td className="font-mono">{fmtMoney(c.totalSales)}</td>
+                  <td className="font-mono">{fmtMoney(c.totalPaid)}</td>
+                  <td>
+                    <span className={`stamp ${c.debt > 0 ? "border-magenta text-magenta bg-magenta/10" : "border-teal text-teal bg-teal/10"}`}>
+                      {fmtMoney(Math.max(0, c.debt))}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex gap-1.5 justify-end">
+                      <button onClick={() => openEdit(c)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
+                      <button onClick={() => remove(c.id)} className="btn-danger">Sil</button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-md p-6">
+      <Modal show={showModal} maxWidth="max-w-md">
             <h3 className="text-lg font-bold mb-4">{editing ? "Müştərini redaktə et" : "Yeni müştəri"}</h3>
             <div className="mb-3">
               <label className="block text-xs font-semibold text-inksoft mb-1">Ad</label>
@@ -126,9 +135,7 @@ export default function CustomersPage() {
               <button onClick={() => setShowModal(false)} className="btn-outline">Ləğv et</button>
               <button onClick={save} className="btn">{editing ? "Yadda saxla" : "Əlavə et"}</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

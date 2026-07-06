@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   fmtMoney,
   fmtDate,
@@ -8,6 +9,7 @@ import {
   PRODUCTION_STATUS_LABELS,
 } from "@/lib/format";
 import { round2, calcBonusAmount } from "@/lib/calc";
+import Modal from "@/components/Modal";
 
 interface Customer { id: string; name: string; }
 interface Order {
@@ -274,45 +276,52 @@ export default function OrdersPage() {
             {orders.length === 0 && (
               <tr><td colSpan={18} className="text-center text-inksoft py-8">Hələ sifariş yoxdur</td></tr>
             )}
-            {orders.map((o) => (
-              <tr key={o.id}>
-                <td className="font-mono">
-                  <Link href={`/orders/${o.id}`} className="text-cyan hover:underline">{o.number}</Link>
-                </td>
-                <td className="font-mono text-inksoft">{fmtDate(o.orderDate)}</td>
-                <td>{o.customer?.name}</td>
-                <td>{o.productName}</td>
-                <td className="font-mono">{o.quantity}</td>
-                <td className="font-mono">{fmtMoney(o.unitPrice)}</td>
-                <td className="font-mono">{fmtMoney(o.total)}</td>
-                <td>{o.managerName || "—"}</td>
-                <td className="font-mono">{o.bonusPercent}%</td>
-                <td className="font-mono">{fmtMoney(o.bonusAmount)}</td>
-                <td>{o.manager2Name || "—"}</td>
-                <td className="font-mono">{o.bonus2Percent}%</td>
-                <td className="font-mono">{fmtMoney(o.bonus2Amount)}</td>
-                <td className="font-mono font-semibold">{fmtMoney(o.finalTotal)}</td>
-                <td><span className="stamp">{PRODUCTION_STATUS_LABELS[o.productionStatus]}</span></td>
-                <td><span className="stamp">{ORDER_STATUS_LABELS[o.status]}</span></td>
-                <td className="font-mono text-inksoft">{fmtDate(o.deliveryDate)}</td>
-                <td>
-                  <div className="flex gap-1.5 justify-end">
-                    {o.status !== "TEHVIL_VERILDI" && o.status !== "LEGV_EDILDI" && (
-                      <button onClick={() => deliver(o.id)} className="btn-outline !py-1 !px-2 text-xs">Təhvil ver</button>
-                    )}
-                    <button onClick={() => openEdit(o)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
-                    <button onClick={() => remove(o.id)} className="btn-danger">Sil</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {orders.map((o) => (
+                <motion.tr
+                  key={o.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td className="font-mono">
+                    <Link href={`/orders/${o.id}`} className="text-accent hover:underline">{o.number}</Link>
+                  </td>
+                  <td className="font-mono text-inksoft">{fmtDate(o.orderDate)}</td>
+                  <td>{o.customer?.name}</td>
+                  <td>{o.productName}</td>
+                  <td className="font-mono">{o.quantity}</td>
+                  <td className="font-mono">{fmtMoney(o.unitPrice)}</td>
+                  <td className="font-mono">{fmtMoney(o.total)}</td>
+                  <td>{o.managerName || "—"}</td>
+                  <td className="font-mono">{o.bonusPercent}%</td>
+                  <td className="font-mono">{fmtMoney(o.bonusAmount)}</td>
+                  <td>{o.manager2Name || "—"}</td>
+                  <td className="font-mono">{o.bonus2Percent}%</td>
+                  <td className="font-mono">{fmtMoney(o.bonus2Amount)}</td>
+                  <td className="font-mono font-semibold">{fmtMoney(o.finalTotal)}</td>
+                  <td><span className="stamp">{PRODUCTION_STATUS_LABELS[o.productionStatus]}</span></td>
+                  <td><span className="stamp">{ORDER_STATUS_LABELS[o.status]}</span></td>
+                  <td className="font-mono text-inksoft">{fmtDate(o.deliveryDate)}</td>
+                  <td>
+                    <div className="flex gap-1.5 justify-end">
+                      {o.status !== "TEHVIL_VERILDI" && o.status !== "LEGV_EDILDI" && (
+                        <button onClick={() => deliver(o.id)} className="btn-outline !py-1 !px-2 text-xs">Təhvil ver</button>
+                      )}
+                      <button onClick={() => openEdit(o)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
+                      <button onClick={() => remove(o.id)} className="btn-danger">Sil</button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-2xl p-6">
+      <Modal show={showModal} maxWidth="max-w-2xl">
             <h3 className="text-lg font-bold mb-1">{editing ? "Sifarişi redaktə et" : "Yeni sifariş"}</h3>
             <p className="text-xs text-inksoft mb-4">Excel-dəki "Sifarişlər" tabına uyğun bütün sahələr.</p>
 
@@ -394,9 +403,7 @@ export default function OrdersPage() {
               <button onClick={() => setShowModal(false)} className="btn-outline">Ləğv et</button>
               <button onClick={save} disabled={saving} className="btn">{editing ? "Yadda saxla" : "Sifarişi yarat"}</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

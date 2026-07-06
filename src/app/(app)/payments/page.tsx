@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney, fmtDate } from "@/lib/format";
+import Modal from "@/components/Modal";
 
 interface Customer { id: string; name: string; }
 interface Payment {
@@ -72,23 +74,30 @@ export default function PaymentsPage() {
             {payments.length === 0 && (
               <tr><td colSpan={6} className="text-center text-inksoft py-8">Hələ ödəniş yoxdur</td></tr>
             )}
-            {payments.map((p) => (
-              <tr key={p.id}>
-                <td className="font-mono text-inksoft">{fmtDate(p.date)}</td>
-                <td>{p.customer.name}</td>
-                <td className="font-mono">{p.invoice?.number || "—"}</td>
-                <td>{p.method}</td>
-                <td className="text-inksoft">{p.note || "—"}</td>
-                <td className="font-mono">{fmtMoney(p.amount)}</td>
-              </tr>
-            ))}
+            <AnimatePresence initial={false}>
+              {payments.map((p) => (
+                <motion.tr
+                  key={p.id}
+                  layout
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <td className="font-mono text-inksoft">{fmtDate(p.date)}</td>
+                  <td>{p.customer.name}</td>
+                  <td className="font-mono">{p.invoice?.number || "—"}</td>
+                  <td>{p.method}</td>
+                  <td className="text-inksoft">{p.note || "—"}</td>
+                  <td className="font-mono">{fmtMoney(p.amount)}</td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center p-8 overflow-y-auto z-50">
-          <div className="card w-full max-w-md p-6">
+      <Modal show={showModal} maxWidth="max-w-md">
             <h3 className="text-lg font-bold mb-4">Yeni ödəniş</h3>
             <div className="mb-3">
               <label className="block text-xs font-semibold text-inksoft mb-1">Müştəri</label>
@@ -117,9 +126,7 @@ export default function PaymentsPage() {
               <button onClick={() => setShowModal(false)} className="btn-outline">Ləğv et</button>
               <button onClick={save} className="btn">Əlavə et</button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }
