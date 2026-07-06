@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  WORKER
+}
+
+enum ProductionStatus {
+  DIZAYN
+  CAP
+  KESIM
+  LAMINASIYA
+  BITIB
+}
+
+enum OrderStatus {
+  GOZLEYIR
+  ISDEDIR
+  TEHVIL_VERILDI
+  LEGV_EDILDI
+}
+
+enum InvoiceStatus {
+  AKTIV
+  QAYTARILDI
+}
+
+enum EqaimeStatus {
+  YAZILIB
+  YAZILMAYIB
+}
+
+enum PaymentStatus {
+  ODENILIB
+  ODENILMEYIB
+  QISMEN_ODENILIB
+}
+
+enum DebtType {
+  BIZE_OLAN
+  BIZIM_OLAN
+}
+
+enum DebtStatus {
+  ACIQ
+  QAPANIB
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(WORKER)
+  createdAt DateTime @default(now())
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String?
+  note      String?
+  createdAt DateTime  @default(now())
+  orders    Order[]
+  invoices  Invoice[]
+  payments  Payment[]
+}
+
+model Order {
+  id               String            @id @default(cuid())
+  number           String            @unique
+  orderDate        DateTime          @default(now())
+  customerId       String
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  productName      String
+  quantity         Float
+  unitPrice        Float
+  total            Float
+  managerName      String?
+  bonusPercent     Float             @default(0)
+  bonusAmount      Float             @default(0)
+  manager2Name     String?
+  bonus2Percent    Float             @default(0)
+  bonus2Amount     Float             @default(0)
+  finalTotal       Float
+  productionStatus ProductionStatus  @default(DIZAYN)
+  status           OrderStatus       @default(GOZLEYIR)
+  deliveryDate     DateTime?
+  invoice          Invoice?
+  cost             Cost?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model Invoice {
+  id                  String        @id @default(cuid())
+  number              String        @unique
+  orderId             String        @unique
+  order               Order         @relation(fields: [orderId], references: [id])
+  orderDate           DateTime
+  deliveryDate        DateTime?
+  customerId          String
+  customer            Customer      @relation(fields: [customerId], references: [id])
+  productName         String
+  quantity            Float
+  unitPrice           Float
+  total               Float
+  managerName         String?
+  bonusPercent        Float         @default(0)
+  bonusAmount         Float         @default(0)
+  manager2Name        String?
+  bonus2Percent       Float         @default(0)
+  bonus2Amount        Float         @default(0)
+  finalTotal          Float
+  note                String?
+  eqaimeStatus        EqaimeStatus  @default(YAZILMAYIB)
+  eqaimeNumber        String?
+  eqaimeDate          DateTime?
+  eqaimePaymentStatus PaymentStatus @default(ODENILMEYIB)
+  status              InvoiceStatus @default(AKTIV)
+  createdAt           DateTime      @default(now())
+  payments            Payment[]
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model Payment {
+  id         String    @id @default(cuid())
+  date       DateTime  @default(now())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  invoiceId  String?
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
+  amount     Float
+  method     String
+  note       String?
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId])
+  @@index([invoiceId])
+}
+
+model Cost {
+  id             String   @id @default(cuid())
+  orderId        String   @unique
+  order          Order    @relation(fields: [orderId], references: [id])
+  paperCost      Float    @default(0)
+  printCost      Float    @default(0)
+  laminationCost Float    @default(0)
+  cuttingCost    Float    @default(0)
+  otherCost      Float    @default(0)
+  totalCost      Float    @default(0)
+  saleAmount     Float    @default(0)
+  profit         Float    @default(0)
+  updatedAt      DateTime @updatedAt
+}
+
+model InventoryItem {
+  id            String     @id @default(cuid())
+  name          String
+  unit          String
+  incoming      Float      @default(0)
+  outgoing      Float      @default(0)
+  balance       Float      @default(0)
+  purchasePrice Float      @default(0)
+  note          String?
+  purchases     Purchase[]
+  createdAt     DateTime   @default(now())
+}
+
+model Purchase {
+  id            String        @id @default(cuid())
+  date          DateTime      @default(now())
+  supplier      String
+  itemId        String
+  item          InventoryItem @relation(fields: [itemId], references: [id])
+  quantity      Float
+  price         Float
+  total         Float
+  paymentStatus PaymentStatus @default(ODENILMEYIB)
+  note          String?
+
+  @@index([itemId])
+}
+
+model Debt {
+  id        String     @id @default(cuid())
+  date      DateTime   @default(now())
+  party     String
+  type      DebtType
+  amount    Float
+  paid      Float      @default(0)
+  remaining Float      @default(0)
+  status    DebtStatus @default(ACIQ)
+  note      String?
+}
+
+model Salary {
+  id           String        @id @default(cuid())
+  employeeName String
+  baseSalary   Float
+  bonus        Float         @default(0)
+  total        Float         @default(0)
+  paid         Float         @default(0)
+  remaining    Float         @default(0)
+  month        String
+  status       PaymentStatus @default(ODENILMEYIB)
+
+  @@index([month])
+}
