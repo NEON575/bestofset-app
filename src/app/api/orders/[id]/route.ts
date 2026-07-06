@@ -85,10 +85,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
 
   const invoice = await prisma.invoice.findUnique({ where: { orderId: params.id } });
   if (invoice) {
-    return NextResponse.json(
-      { error: "Bu sifarişin fakturası var, əvvəlcə fakturanı ləğv edin" },
-      { status: 400 }
-    );
+    const error =
+      invoice.status === "AKTIV"
+        ? "Bu sifarişin aktiv fakturası var — əvvəlcə \"Fakturalar\" bölməsində \"Sifarişə qaytar\" düyməsi ilə fakturanı ləğv edin."
+        : "Bu sifarişin qaytarılmış fakturası var — sifarişi silmək üçün əvvəlcə \"Fakturalar\" bölməsində həmin fakturanı silin.";
+    return NextResponse.json({ error }, { status: 400 });
   }
 
   await prisma.order.delete({ where: { id: params.id } });

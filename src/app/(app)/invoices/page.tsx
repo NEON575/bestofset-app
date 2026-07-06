@@ -65,6 +65,17 @@ export default function InvoicesPage() {
     load();
   }
 
+  async function remove(id: string) {
+    if (!confirm("Fakturanı silmək istədiyinizə əminsiniz? Bu əməliyyat geri qaytarıla bilməz.")) return;
+    const res = await fetch(`/api/invoices/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error || "Xəta baş verdi");
+      return;
+    }
+    load();
+  }
+
   const eqaimeBadge = (status: string) =>
     status === "YAZILIB"
       ? "border-teal text-teal bg-teal/10"
@@ -112,6 +123,9 @@ export default function InvoicesPage() {
                     <button onClick={() => openEdit(inv)} className="btn-outline !py-1 !px-2 text-xs">Redaktə</button>
                     {inv.status === "AKTIV" && (
                       <button onClick={() => returnToOrder(inv.id)} className="btn-danger">Sifarişə qaytar</button>
+                    )}
+                    {inv.status === "QAYTARILDI" && (
+                      <button onClick={() => remove(inv.id)} className="btn-danger">Sil</button>
                     )}
                   </div>
                 </td>

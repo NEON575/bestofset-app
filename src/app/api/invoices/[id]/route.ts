@@ -24,3 +24,22 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const invoice = await prisma.invoice.update({ where: { id: params.id }, data });
   return NextResponse.json(invoice);
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "İcazə yoxdur" }, { status: 403 });
+  }
+
+  const invoice = await prisma.invoice.findUnique({ where: { id: params.id } });
+  if (!invoice) return NextResponse.json({ error: "Faktura tapılmadı" }, { status: 404 });
+  if (invoice.status === "AKTIV") {
+    return NextResponse.json(
+      { error: "Aktiv faktura silinə bilməz — əvvəlcə \"Sifarişə qaytar\" düyməsi ilə ləğv edin" },
+      { status: 400 }
+    );
+  }
+
+  await prisma.invoice.delete({ where: { id: params.id } });
+  return NextResponse.json({ ok: true });
+}
