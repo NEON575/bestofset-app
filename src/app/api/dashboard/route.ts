@@ -39,7 +39,9 @@ export async function GET() {
       select: { finalTotal: true },
     }),
     prisma.debt.findMany({ where: { status: "ACIQ" } }),
-    prisma.cost.findMany({ select: { totalCost: true, profit: true } }),
+    prisma.costItem.findMany({
+      select: { orderId: true, amount: true, order: { select: { finalTotal: true } } },
+    }),
     prisma.order.findMany({
       where: { status: { in: ["GOZLEYIR", "ISDEDIR"] } },
       include: { customer: { select: { name: true } } },
@@ -74,8 +76,20 @@ export async function GET() {
     .filter((d) => d.type === "BIZE_OLAN")
     .reduce((s, d) => s + d.remaining, 0);
 
-  const totalCost = costs.reduce((s, c) => s + c.totalCost, 0);
-  const totalProfit = costs.reduce((s, c) => s + c.profit, 0);
+  // Xərc sətirlərini sifariş üzrə qruplaşdır: hər sifarişin satışı (Son Cəm)
+  // bir dəfə, maya dəyəri isə həmin sifarişin bütün sətirlərinin cəmidir.
+  const perOrder = new Map<string, { cost: number; sale: number }>();
+  for (const c of costs) {
+    const e = perOrder.get(c.orderId) || { cost: 0, sale: c.order.finalTotal };
+    e.cost += c.amount;
+    perOrder.set(c.orderId, e);
+  }
+  let totalCost = 0;
+  let totalProfit = 0;
+  for (const { cost, sale } of perOrder.values()) {
+    totalCost += cost;
+    totalProfit += sale - cost;
+  }
 
   return NextResponse.json({
     activeOrderCount,

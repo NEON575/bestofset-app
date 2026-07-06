@@ -63,21 +63,9 @@ export function calcOrderAmounts(input: OrderCalcInput): OrderCalcResult {
   return { total, bonusAmount, bonus2Amount, finalTotal };
 }
 
-/** Ümumi maya = Kağız + Çap + Laminasiya + Kəsim + Digər xərc */
-export function calcTotalCost(parts: {
-  paperCost: number;
-  printCost: number;
-  laminationCost: number;
-  cuttingCost: number;
-  otherCost: number;
-}): number {
-  return round2(
-    (parts.paperCost || 0) +
-      (parts.printCost || 0) +
-      (parts.laminationCost || 0) +
-      (parts.cuttingCost || 0) +
-      (parts.otherCost || 0)
-  );
+/** Ümumi maya = bütün xərc sətirlərinin cəmi */
+export function sumCostItems(items: { amount: number }[]): number {
+  return round2(items.reduce((s, c) => s + (c.amount || 0), 0));
 }
 
 /** Mənfəət = Satış məbləği - Ümumi maya */

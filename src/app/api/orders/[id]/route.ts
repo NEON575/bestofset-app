@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     include: {
       customer: true,
       invoice: true,
-      cost: true,
+      costItems: { orderBy: { createdAt: "asc" } },
       parts: { orderBy: { sortOrder: "asc" }, include: { steps: { orderBy: { sequence: "asc" } } } },
       finalSteps: { orderBy: { sequence: "asc" } },
     },

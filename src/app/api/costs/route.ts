@@ -1,46 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { calcTotalCost, calcProfit } from "@/lib/calc";
+import { round2, calcProfit } from "@/lib/calc";
 
+/**
+ * Maya dəyəri artıq sifariş-səviyyəli sərbəst xərc sətirləri (CostItem) ilə
+ * idarə olunur. Bu endpoint yalnız oxunaqlı xülasə qaytarır: ən azı bir
+ * xərc sətri olan hər sifariş üçün ümumi maya, satış (Son Cəm), mənfəət
+ * və marja. Xərclər sifariş detal səhifəsində əlavə/silinir.
+ */
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Giriş tələb olunur" }, { status: 401 });
 
-  const costs = await prisma.cost.findMany({
-    include: { order: { select: { number: true, productName: true, finalTotal: true } } },
-    orderBy: { updatedAt: "desc" },
-  });
-  return NextResponse.json(costs);
-}
-
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Giriş tələb olunur" }, { status: 401 });
-
-  const body = await req.json();
-  if (!body.orderId) return NextResponse.json({ error: "orderId tələb olunur" }, { status: 400 });
-
-  const order = await prisma.order.findUnique({ where: { id: body.orderId } });
-  if (!order) return NextResponse.json({ error: "Sifariş tapılmadı" }, { status: 404 });
-
-  const parts = {
-    paperCost: parseFloat(body.paperCost || 0),
-    printCost: parseFloat(body.printCost || 0),
-    laminationCost: parseFloat(body.laminationCost || 0),
-    cuttingCost: parseFloat(body.cuttingCost || 0),
-    otherCost: parseFloat(body.otherCost || 0),
-  };
-  const totalCost = calcTotalCost(parts);
-  const saleAmount = order.finalTotal;
-  const profit = calcProfit(saleAmount, totalCost);
-
-  const cost = await prisma.cost.upsert({
-    where: { orderId: body.orderId },
-    update: { ...parts, totalCost, saleAmount, profit },
-    create: { orderId: body.orderId, ...parts, totalCost, saleAmount, profit },
+  const orders = await prisma.order.findMany({
+    where: { costItems: { some: {} } },
+    include: {
+      customer: { select: { name: true } },
+      costItems: { select: { amount: true } },
+    },
+    orderBy: { orderDate: "desc" },
   });
 
-  return NextResponse.json(cost, { status: 201 });
+  const result = orders.map((o) => {
+    const totalCost = round2(o.costItems.reduce((s, c) => s + c.amount, 0));
+    const saleAmount = o.finalTotal;
+    const profit = calcProfit(saleAmount, totalCost);
+    const margin = saleAmount > 0 ? round2((profit / saleAmount) * 100) : 0;
+    return {
+      orderId: o.id,
+      number: o.number,
+      customerName: o.customer?.name || "—",
+      productName: o.productName,
+      totalCost,
+      saleAmount,
+      profit,
+      margin,
+    };
+  });
+
+  return NextResponse.json(result);
 }

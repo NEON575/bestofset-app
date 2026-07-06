@@ -24,6 +24,13 @@ interface Part {
   steps: Step[];
 }
 
+interface CostItem {
+  id: string;
+  category: string;
+  amount: number;
+  note: string | null;
+}
+
 interface OrderDetail {
   id: string;
   number: string;
@@ -35,6 +42,7 @@ interface OrderDetail {
   status: string;
   parts: Part[];
   finalSteps: Step[];
+  costItems: CostItem[];
 }
 
 const emptyPartForm = { name: "", material: "", printColor: "", printSides: "" };
@@ -68,6 +76,9 @@ export default function OrderDetailPage() {
   const [editingPartId, setEditingPartId] = useState<string | null>(null);
   const [editPartForm, setEditPartForm] = useState(emptyPartForm);
   const [stepInputs, setStepInputs] = useState<Record<string, string>>({});
+  const [costTypes, setCostTypes] = useState<string[]>([]);
+  const [showNewCost, setShowNewCost] = useState(false);
+  const [costForm, setCostForm] = useState({ category: "", amount: "", note: "" });
 
   async function load() {
     const res = await fetch(`/api/orders/${orderId}`);
@@ -76,6 +87,9 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     load();
+    fetch("/api/settings/options?category=COST_TYPE")
+      .then((r) => r.json())
+      .then((opts: { value: string }[]) => setCostTypes(opts.map((o) => o.value)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
@@ -178,7 +192,38 @@ export default function OrderDetailPage() {
     load();
   }
 
+  async function addCost() {
+    const amount = parseFloat(costForm.amount);
+    if (!costForm.category || isNaN(amount)) {
+      setError("Xərc növü və məbləğ tələb olunur");
+      return;
+    }
+    const res = await fetch(`/api/orders/${orderId}/costs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: costForm.category, amount, note: costForm.note }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Xəta baş verdi");
+      return;
+    }
+    setCostForm({ category: "", amount: "", note: "" });
+    setShowNewCost(false);
+    setError("");
+    load();
+  }
+
+  async function removeCost(costId: string) {
+    if (!confirm("Bu xərc sətrini silmək istədiyinizə əminsiniz?")) return;
+    await fetch(`/api/orders/${orderId}/costs/${costId}`, { method: "DELETE" });
+    load();
+  }
+
   if (!order) return <div className="text-inksoft text-sm">Yüklənir...</div>;
+
+  const totalCost = order.costItems.reduce((s, c) => s + c.amount, 0);
+  const profit = order.finalTotal - totalCost;
 
   function renderSteps(steps: Step[], partId: string | null) {
     const activeId = firstPendingId(steps);
@@ -346,11 +391,81 @@ export default function OrderDetailPage() {
       </div>
 
       <h2 className="text-lg font-bold mb-3">Birləşmə mərhələləri</h2>
-      <div className="card p-4">
+      <div className="card p-4 mb-8">
         {order.finalSteps.length === 0 && (
           <div className="text-sm text-inksoft text-center py-4">Hələ birləşmə mərhələsi əlavə edilməyib</div>
         )}
         {renderSteps(order.finalSteps, null)}
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-bold">Maya Dəyəri</h2>
+        <button
+          onClick={() => {
+            setShowNewCost(!showNewCost);
+            setCostForm({ category: costTypes[0] || "", amount: "", note: "" });
+          }}
+          className="btn-outline text-xs"
+        >
+          + Xərc əlavə et
+        </button>
+      </div>
+
+      <div className="card p-4">
+        {showNewCost && (
+          <div className="flex flex-wrap items-end gap-2 mb-3 pb-3 border-b border-line">
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-xs font-semibold text-inksoft mb-1">Xərc növü</label>
+              <select className="input" value={costForm.category} onChange={(e) => setCostForm({ ...costForm, category: e.target.value })}>
+                <option value="">— seçin —</option>
+                {costTypes.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="w-32">
+              <label className="block text-xs font-semibold text-inksoft mb-1">Məbləğ (₼)</label>
+              <input type="number" min="0" step="0.01" className="input" value={costForm.amount} onChange={(e) => setCostForm({ ...costForm, amount: e.target.value })} />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-xs font-semibold text-inksoft mb-1">Qeyd</label>
+              <input className="input" value={costForm.note} onChange={(e) => setCostForm({ ...costForm, note: e.target.value })} />
+            </div>
+            <button onClick={addCost} className="btn">Əlavə et</button>
+          </div>
+        )}
+
+        {order.costItems.length === 0 && !showNewCost && (
+          <div className="text-sm text-inksoft text-center py-4">Hələ xərc əlavə edilməyib</div>
+        )}
+
+        <div className="flex flex-col gap-1.5">
+          {order.costItems.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-2 bg-paperalt rounded-md px-2.5 py-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-semibold text-sm">{c.category}</span>
+                {c.note && <span className="text-xs text-inksoft truncate">· {c.note}</span>}
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-mono text-sm">{fmtMoney(c.amount)}</span>
+                <button onClick={() => removeCost(c.id)} className="text-magenta text-xs hover:underline">Sil</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mt-4 pt-3 border-t border-line text-sm">
+          <div>
+            <div className="text-xs text-inksoft mb-0.5">Ümumi maya dəyəri</div>
+            <div className="font-mono font-semibold">{fmtMoney(totalCost)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-inksoft mb-0.5">Satış məbləği</div>
+            <div className="font-mono font-semibold">{fmtMoney(order.finalTotal)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-inksoft mb-0.5">Mənfəət</div>
+            <div className={`font-mono font-semibold ${profit >= 0 ? "text-teal" : "text-magenta"}`}>{fmtMoney(profit)}</div>
+          </div>
+        </div>
       </div>
     </div>
   );

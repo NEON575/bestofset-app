@@ -8,6 +8,7 @@ const DEFAULTS: Record<string, string[]> = {
   POSITION: ["Menecer", "Dizayner", "Çapçı", "Anbar işçisi"],
   PAYMENT_METHOD: ["Nağd", "Kart", "Bank köçürməsi"],
   UNIT: ["ədəd", "vərəq", "m", "m2", "kq", "litr", "rulon"],
+  COST_TYPE: ["Kağız", "Çap", "Forma", "Laminasiya", "Kəsim", "Əl işi", "Termokley", "Digər"],
 };
 
 export async function GET(req: NextRequest) {

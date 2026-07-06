@@ -96,7 +96,7 @@ model Order {
   status           OrderStatus       @default(GOZLEYIR)
   deliveryDate     DateTime?
   invoice          Invoice?
-  cost             Cost?
+  costItems        CostItem[]
   parts            ProductionPart[]
   finalSteps       ProductionStep[] @relation("OrderFinalSteps")
   createdAt        DateTime          @default(now())
@@ -189,19 +189,18 @@ model Payment {
   @@index([invoiceId])
 }
 
-model Cost {
-  id             String   @id @default(cuid())
-  orderId        String   @unique
-  order          Order    @relation(fields: [orderId], references: [id])
-  paperCost      Float    @default(0)
-  printCost      Float    @default(0)
-  laminationCost Float    @default(0)
-  cuttingCost    Float    @default(0)
-  otherCost      Float    @default(0)
-  totalCost      Float    @default(0)
-  saleAmount     Float    @default(0)
-  profit         Float    @default(0)
-  updatedAt      DateTime @updatedAt
+/// Sifarişin sərbəst əlavə oluna bilən maya dəyəri sətirləri.
+/// category — SettingOption(COST_TYPE)-dan seçilən dəyər.
+model CostItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  category  String
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model InventoryItem {

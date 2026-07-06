@@ -14,6 +14,7 @@ const CATEGORIES = [
   { key: "POSITION", label: "Vəzifələr", placeholder: "məs: Kuryer" },
   { key: "PAYMENT_METHOD", label: "Ödəniş üsulları", placeholder: "məs: PayPal" },
   { key: "UNIT", label: "Ölçü vahidləri", placeholder: "məs: qutu" },
+  { key: "COST_TYPE", label: "Xərc növləri", placeholder: "məs: Qablaşdırma" },
 ];
 
 export default function SettingsPage() {
