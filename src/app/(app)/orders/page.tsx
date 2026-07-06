@@ -31,7 +31,6 @@ interface Order {
   deliveryDate: string | null;
 }
 
-const PRODUCTION_OPTIONS = ["DIZAYN", "CAP", "KESIM", "LAMINASIYA", "BITIB"];
 const STATUS_OPTIONS = ["GOZLEYIR", "ISDEDIR", "LEGV_EDILDI"]; // TEHVIL_VERILDI ayrıca düymə ilə
 
 const emptyForm = {
@@ -46,7 +45,6 @@ const emptyForm = {
   manager2Name: "",
   bonus2Percent: "0",
   bonus2Amount: "0",
-  productionStatus: "DIZAYN",
   status: "GOZLEYIR",
   orderDate: new Date().toISOString().slice(0, 10),
 };
@@ -96,7 +94,6 @@ export default function OrdersPage() {
       manager2Name: o.manager2Name || "",
       bonus2Percent: String(o.bonus2Percent),
       bonus2Amount: String(o.bonus2Amount),
-      productionStatus: o.productionStatus,
       status: o.status === "TEHVIL_VERILDI" ? "ISDEDIR" : o.status,
       orderDate: o.orderDate.slice(0, 10),
     });
@@ -380,20 +377,12 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="block text-xs font-semibold text-inksoft mb-1">İstehsal Statusu</label>
-                <select className="input" value={form.productionStatus} onChange={(e) => setForm({ ...form, productionStatus: e.target.value })}>
-                  {PRODUCTION_OPTIONS.map((s) => <option key={s} value={s}>{PRODUCTION_STATUS_LABELS[s]}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-inksoft mb-1">Status</label>
-                <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABELS[s]}</option>)}
-                </select>
-                <p className="text-[11px] text-inksoft mt-1">"Təhvil verildi" üçün siyahıdakı "Təhvil ver" düyməsini istifadə edin.</p>
-              </div>
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-inksoft mb-1">Status</label>
+              <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABELS[s]}</option>)}
+              </select>
+              <p className="text-[11px] text-inksoft mt-1">"Təhvil verildi" üçün siyahıdakı "Təhvil ver" düyməsini istifadə edin. İstehsal statusu istehsal bölməsindən idarə olunur.</p>
             </div>
 
             {error && <div className="text-xs text-magenta bg-magenta/10 border border-magenta rounded-md px-3 py-2 mb-3">{error}</div>}
