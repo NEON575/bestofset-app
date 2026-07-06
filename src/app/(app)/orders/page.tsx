@@ -12,6 +12,7 @@ import { round2, calcBonusAmount } from "@/lib/calc";
 import Modal from "@/components/Modal";
 
 interface Customer { id: string; name: string; }
+interface Employee { id: string; name: string; active: boolean; }
 interface Order {
   id: string;
   number: string;
@@ -59,9 +60,19 @@ function toNum(v: any): number | null {
   return isNaN(n) ? null : n;
 }
 
+/** Aktiv işçilər + (əgər sifarişdə artıq deaktiv olunmuş menecer seçilibsə) onun adı. */
+function managerOptions(employees: Employee[], currentName: string): string[] {
+  const active = employees.filter((e) => e.active).map((e) => e.name);
+  if (currentName && !active.includes(currentName)) {
+    return [...active, currentName];
+  }
+  return active;
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
@@ -69,9 +80,14 @@ export default function OrdersPage() {
   const [saving, setSaving] = useState(false);
 
   async function load() {
-    const [oRes, cRes] = await Promise.all([fetch("/api/orders"), fetch("/api/customers")]);
+    const [oRes, cRes, eRes] = await Promise.all([
+      fetch("/api/orders"),
+      fetch("/api/customers"),
+      fetch("/api/employees"),
+    ]);
     setOrders(await oRes.json());
     setCustomers(await cRes.json());
+    setEmployees(await eRes.json());
   }
 
   useEffect(() => { load(); }, []);
@@ -362,7 +378,10 @@ export default function OrdersPage() {
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">Menecer</label>
-                <input className="input" value={form.managerName} onChange={(e) => setForm({ ...form, managerName: e.target.value })} />
+                <select className="input" value={form.managerName} onChange={(e) => setForm({ ...form, managerName: e.target.value })}>
+                  <option value="">— seçilməyib —</option>
+                  {managerOptions(employees, form.managerName).map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">Bonus %</label>
@@ -377,7 +396,10 @@ export default function OrdersPage() {
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">2-ci Menecer</label>
-                <input className="input" value={form.manager2Name} onChange={(e) => setForm({ ...form, manager2Name: e.target.value })} />
+                <select className="input" value={form.manager2Name} onChange={(e) => setForm({ ...form, manager2Name: e.target.value })}>
+                  <option value="">— seçilməyib —</option>
+                  {managerOptions(employees, form.manager2Name).map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-inksoft mb-1">2-ci Bonus %</label>

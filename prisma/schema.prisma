@@ -256,3 +256,11 @@ model Salary {
 
   @@index([month])
 }
+
+model Employee {
+  id        String   @id @default(cuid())
+  name      String
+  position  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}

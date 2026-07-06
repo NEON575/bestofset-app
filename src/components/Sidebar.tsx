@@ -18,6 +18,7 @@ const ALL_TABS = [
   { href: "/inventory", label: "Anbar", section: "inventory" },
   { href: "/purchases", label: "Alışlar", section: "purchases" },
   { href: "/debts", label: "Borclar", section: "debts" },
+  { href: "/employees", label: "İşçilər", section: "employees" },
   { href: "/salaries", label: "Əmək haqqı", section: "salaries" },
 ];
 
@@ -27,7 +28,7 @@ export default function Sidebar({ role, name }: { role: string; name: string }) 
   const visible = ALL_TABS.filter((t) => {
     if (role === "ADMIN") return true;
     if (role === "MANAGER")
-      return ["dashboard", "orders", "production", "invoices", "customers", "payments"].includes(
+      return ["dashboard", "orders", "production", "invoices", "customers", "payments", "employees"].includes(
         t.section
       );
     return ["orders", "production"].includes(t.section);

@@ -15,6 +15,16 @@ interface Salary {
   month: string;
   status: string;
 }
+interface Employee { id: string; name: string; active: boolean; }
+
+/** Aktiv işçilər + (əgər qeyddə artıq deaktiv olunmuş işçi seçilibsə) onun adı. */
+function employeeOptions(employees: Employee[], currentName: string): string[] {
+  const active = employees.filter((e) => e.active).map((e) => e.name);
+  if (currentName && !active.includes(currentName)) {
+    return [...active, currentName];
+  }
+  return active;
+}
 
 const emptyForm = {
   employeeName: "",
@@ -26,6 +36,7 @@ const emptyForm = {
 
 export default function SalariesPage() {
   const [salaries, setSalaries] = useState<Salary[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Salary | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
@@ -34,8 +45,9 @@ export default function SalariesPage() {
 
   async function load() {
     const url = monthFilter ? `/api/salaries?month=${monthFilter}` : "/api/salaries";
-    const res = await fetch(url);
-    setSalaries(await res.json());
+    const [sRes, eRes] = await Promise.all([fetch(url), fetch("/api/employees")]);
+    setSalaries(await sRes.json());
+    setEmployees(await eRes.json());
   }
 
   useEffect(() => {
@@ -184,11 +196,14 @@ export default function SalariesPage() {
 
             <div className="mb-3">
               <label className="block text-xs font-semibold text-inksoft mb-1">Ad Soyad</label>
-              <input
+              <select
                 className="input"
                 value={form.employeeName}
                 onChange={(e) => setForm({ ...form, employeeName: e.target.value })}
-              />
+              >
+                <option value="">— seçilməyib —</option>
+                {employeeOptions(employees, form.employeeName).map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>

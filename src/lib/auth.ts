@@ -53,9 +53,9 @@ export const authOptions: NextAuthOptions = {
 export const ROLE_ACCESS: Record<string, string[]> = {
   ADMIN: [
     "dashboard", "orders", "production", "invoices", "customers", "payments",
-    "costs", "inventory", "purchases", "debts", "salaries", "settings",
+    "costs", "inventory", "purchases", "debts", "employees", "salaries", "settings",
   ],
-  MANAGER: ["dashboard", "orders", "production", "invoices", "customers", "payments"],
+  MANAGER: ["dashboard", "orders", "production", "invoices", "customers", "payments", "employees"],
   WORKER: ["orders", "production"],
 };
 

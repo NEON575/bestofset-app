@@ -12,6 +12,7 @@ export const config = {
     "/inventory/:path*",
     "/purchases/:path*",
     "/debts/:path*",
+    "/employees/:path*",
     "/salaries/:path*",
     "/settings/:path*",
   ],
