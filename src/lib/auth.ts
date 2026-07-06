@@ -52,11 +52,11 @@ export const authOptions: NextAuthOptions = {
 /** Rol-əsaslı görünürlük qaydaları (səhifə/API tərəfində istifadə üçün) */
 export const ROLE_ACCESS: Record<string, string[]> = {
   ADMIN: [
-    "dashboard", "orders", "invoices", "customers", "payments",
+    "dashboard", "orders", "production", "invoices", "customers", "payments",
     "costs", "inventory", "purchases", "debts", "salaries", "settings",
   ],
-  MANAGER: ["dashboard", "orders", "invoices", "customers", "payments"],
-  WORKER: ["orders"],
+  MANAGER: ["dashboard", "orders", "production", "invoices", "customers", "payments"],
+  WORKER: ["orders", "production"],
 };
 
 export function canAccess(role: string | undefined, section: string): boolean {

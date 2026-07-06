@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 const ALL_TABS = [
   { href: "/dashboard", label: "Dashboard", section: "dashboard" },
   { href: "/orders", label: "Sifarişlər", section: "orders" },
+  { href: "/production", label: "İstehsal", section: "production" },
   { href: "/costs", label: "Maya Dəyəri", section: "costs" },
   { href: "/invoices", label: "Satış Fakturaları", section: "invoices" },
   { href: "/customers", label: "Müştərilər", section: "customers" },
@@ -21,10 +22,10 @@ export default function Sidebar({ role, name }: { role: string; name: string }) 
   const visible = ALL_TABS.filter((t) => {
     if (role === "ADMIN") return true;
     if (role === "MANAGER")
-      return ["dashboard", "orders", "invoices", "customers", "payments"].includes(
+      return ["dashboard", "orders", "production", "invoices", "customers", "payments"].includes(
         t.section
       );
-    return ["orders"].includes(t.section);
+    return ["orders", "production"].includes(t.section);
   });
 
   return (
