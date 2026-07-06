@@ -8,6 +8,7 @@ interface Customer {
   id: string;
   name: string;
   phone: string | null;
+  taxId: string | null;
   note: string | null;
   orderCount: number;
   totalSales: number;
@@ -19,7 +20,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", note: "" });
+  const [form, setForm] = useState({ name: "", phone: "", taxId: "", note: "" });
   const [error, setError] = useState("");
 
   async function load() {
@@ -30,13 +31,13 @@ export default function CustomersPage() {
 
   function openNew() {
     setEditing(null);
-    setForm({ name: "", phone: "", note: "" });
+    setForm({ name: "", phone: "", taxId: "", note: "" });
     setError("");
     setShowModal(true);
   }
   function openEdit(c: Customer) {
     setEditing(c);
-    setForm({ name: c.name, phone: c.phone || "", note: c.note || "" });
+    setForm({ name: c.name, phone: c.phone || "", taxId: c.taxId || "", note: c.note || "" });
     setError("");
     setShowModal(true);
   }
@@ -76,12 +77,12 @@ export default function CustomersPage() {
         <table>
           <thead>
             <tr>
-              <th>Ad</th><th>Telefon</th><th>Sifariş sayı</th><th>Ümumi satış</th><th>Ödənilib</th><th>Borc</th><th></th>
+              <th>Ad</th><th>VÖEN</th><th>Telefon</th><th>Sifariş sayı</th><th>Ümumi satış</th><th>Ödənilib</th><th>Borc</th><th></th>
             </tr>
           </thead>
           <tbody>
             {customers.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-inksoft py-8">Hələ müştəri yoxdur</td></tr>
+              <tr><td colSpan={8} className="text-center text-inksoft py-8">Hələ müştəri yoxdur</td></tr>
             )}
             <AnimatePresence initial={false}>
               {customers.map((c) => (
@@ -94,6 +95,7 @@ export default function CustomersPage() {
                   transition={{ duration: 0.2 }}
                 >
                   <td>{c.name}</td>
+                  <td className="font-mono">{c.taxId || "—"}</td>
                   <td className="font-mono">{c.phone || "—"}</td>
                   <td className="font-mono">{c.orderCount}</td>
                   <td className="font-mono">{fmtMoney(c.totalSales)}</td>
@@ -122,9 +124,15 @@ export default function CustomersPage() {
               <label className="block text-xs font-semibold text-inksoft mb-1">Ad</label>
               <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
-            <div className="mb-3">
-              <label className="block text-xs font-semibold text-inksoft mb-1">Telefon</label>
-              <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-semibold text-inksoft mb-1">Telefon</label>
+                <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-inksoft mb-1">VÖEN</label>
+                <input className="input" value={form.taxId} onChange={(e) => setForm({ ...form, taxId: e.target.value })} />
+              </div>
             </div>
             <div className="mb-4">
               <label className="block text-xs font-semibold text-inksoft mb-1">Qeyd</label>

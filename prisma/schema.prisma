@@ -67,6 +67,7 @@ model Customer {
   id        String    @id @default(cuid())
   name      String
   phone     String?
+  taxId     String?   // VÖEN
   note      String?
   createdAt DateTime  @default(now())
   orders    Order[]
@@ -216,10 +217,22 @@ model InventoryItem {
   createdAt     DateTime   @default(now())
 }
 
+model Supplier {
+  id        String     @id @default(cuid())
+  name      String
+  phone     String?
+  taxId     String?    // VÖEN
+  address   String?
+  note      String?
+  createdAt DateTime   @default(now())
+  purchases Purchase[]
+}
+
 model Purchase {
   id            String        @id @default(cuid())
   date          DateTime      @default(now())
-  supplier      String
+  supplierId    String
+  supplier      Supplier      @relation(fields: [supplierId], references: [id])
   itemId        String
   item          InventoryItem @relation(fields: [itemId], references: [id])
   quantity      Float
@@ -229,6 +242,7 @@ model Purchase {
   note          String?
 
   @@index([itemId])
+  @@index([supplierId])
 }
 
 model Debt {

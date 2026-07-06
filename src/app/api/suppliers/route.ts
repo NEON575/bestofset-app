@@ -7,28 +7,25 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Giriş tələb olunur" }, { status: 401 });
 
-  const customers = await prisma.customer.findMany({
+  const suppliers = await prisma.supplier.findMany({
     orderBy: { name: "asc" },
     include: {
-      invoices: { where: { status: "AKTIV" }, select: { finalTotal: true } },
-      payments: { select: { amount: true } },
-      _count: { select: { orders: true } },
+      purchases: { select: { total: true } },
+      _count: { select: { purchases: true } },
     },
   });
 
-  const result = customers.map((c) => {
-    const totalSales = c.invoices.reduce((s, i) => s + i.finalTotal, 0);
-    const totalPaid = c.payments.reduce((s, p) => s + p.amount, 0);
+  const result = suppliers.map((s) => {
+    const totalPurchase = s.purchases.reduce((sum, p) => sum + p.total, 0);
     return {
-      id: c.id,
-      name: c.name,
-      phone: c.phone,
-      taxId: c.taxId,
-      note: c.note,
-      orderCount: c._count.orders,
-      totalSales: Math.round(totalSales * 100) / 100,
-      totalPaid: Math.round(totalPaid * 100) / 100,
-      debt: Math.round((totalSales - totalPaid) * 100) / 100,
+      id: s.id,
+      name: s.name,
+      phone: s.phone,
+      taxId: s.taxId,
+      address: s.address,
+      note: s.note,
+      purchaseCount: s._count.purchases,
+      totalPurchase: Math.round(totalPurchase * 100) / 100,
     };
   });
 
@@ -44,14 +41,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ad tələb olunur" }, { status: 400 });
   }
 
-  const customer = await prisma.customer.create({
+  const supplier = await prisma.supplier.create({
     data: {
       name: body.name,
       phone: body.phone || null,
       taxId: body.taxId || null,
+      address: body.address || null,
       note: body.note || null,
     },
   });
 
-  return NextResponse.json(customer, { status: 201 });
+  return NextResponse.json(supplier, { status: 201 });
 }

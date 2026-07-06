@@ -9,7 +9,10 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Giriş tələb olunur" }, { status: 401 });
 
   const purchases = await prisma.purchase.findMany({
-    include: { item: { select: { name: true, unit: true } } },
+    include: {
+      item: { select: { name: true, unit: true } },
+      supplier: { select: { name: true } },
+    },
     orderBy: { date: "desc" },
   });
   return NextResponse.json(purchases);
@@ -20,8 +23,8 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Giriş tələb olunur" }, { status: 401 });
 
   const body = await req.json();
-  if (!body.itemId || !body.quantity || !body.price) {
-    return NextResponse.json({ error: "Material, say və qiymət tələb olunur" }, { status: 400 });
+  if (!body.supplierId || !body.itemId || !body.quantity || !body.price) {
+    return NextResponse.json({ error: "Təchizatçı, material, say və qiymət tələb olunur" }, { status: 400 });
   }
   const quantity = parseFloat(body.quantity);
   const price = parseFloat(body.price);
@@ -30,7 +33,7 @@ export async function POST(req: NextRequest) {
   const result = await prisma.$transaction(async (tx) => {
     const purchase = await tx.purchase.create({
       data: {
-        supplier: body.supplier || "—",
+        supplierId: body.supplierId,
         itemId: body.itemId,
         quantity,
         price,

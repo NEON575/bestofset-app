@@ -5,32 +5,39 @@ import { fmtMoney, fmtDate, PAYMENT_STATUS_LABELS } from "@/lib/format";
 import Modal from "@/components/Modal";
 
 interface InventoryItem { id: string; name: string; unit: string; }
+interface Supplier { id: string; name: string; }
 interface Purchase {
-  id: string; date: string; supplier: string; item: { name: string; unit: string };
+  id: string; date: string; supplier: { name: string }; item: { name: string; unit: string };
   quantity: number; price: number; total: number; paymentStatus: string;
 }
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ supplier: "", itemId: "", quantity: "", price: "", paymentStatus: "ODENILMEYIB" });
+  const [form, setForm] = useState({ supplierId: "", itemId: "", quantity: "", price: "", paymentStatus: "ODENILMEYIB" });
   const [error, setError] = useState("");
 
   async function load() {
-    const [pRes, iRes] = await Promise.all([fetch("/api/purchases"), fetch("/api/inventory")]);
+    const [pRes, iRes, sRes] = await Promise.all([
+      fetch("/api/purchases"),
+      fetch("/api/inventory"),
+      fetch("/api/suppliers"),
+    ]);
     setPurchases(await pRes.json());
     setItems(await iRes.json());
+    setSuppliers(await sRes.json());
   }
   useEffect(() => { load(); }, []);
 
   function openNew() {
-    setForm({ supplier: "", itemId: items[0]?.id || "", quantity: "", price: "", paymentStatus: "ODENILMEYIB" });
+    setForm({ supplierId: suppliers[0]?.id || "", itemId: items[0]?.id || "", quantity: "", price: "", paymentStatus: "ODENILMEYIB" });
     setError(""); setShowModal(true);
   }
 
   async function save() {
-    if (!form.itemId || !form.quantity || !form.price) { setError("Material, say və qiyməti doldurun"); return; }
+    if (!form.supplierId || !form.itemId || !form.quantity || !form.price) { setError("Təchizatçı, material, say və qiyməti doldurun"); return; }
     const res = await fetch("/api/purchases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (!res.ok) { const d = await res.json(); setError(d.error); return; }
     setShowModal(false); load();
@@ -66,7 +73,7 @@ export default function PurchasesPage() {
                   transition={{ duration: 0.2 }}
                 >
                   <td className="font-mono text-inksoft">{fmtDate(p.date)}</td>
-                  <td>{p.supplier}</td>
+                  <td>{p.supplier?.name || "—"}</td>
                   <td>{p.item.name}</td>
                   <td className="font-mono">{p.quantity} {p.item.unit}</td>
                   <td className="font-mono">{fmtMoney(p.price)}</td>
@@ -82,7 +89,10 @@ export default function PurchasesPage() {
       <Modal show={showModal} maxWidth="max-w-md">
             <h3 className="text-lg font-bold mb-4">Yeni alış</h3>
             <div className="mb-3"><label className="block text-xs font-semibold text-inksoft mb-1">Təchizatçı</label>
-              <input className="input" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} /></div>
+              <select className="input" value={form.supplierId} onChange={(e) => setForm({ ...form, supplierId: e.target.value })}>
+                <option value="">— seçin —</option>
+                {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select></div>
             <div className="mb-3"><label className="block text-xs font-semibold text-inksoft mb-1">Material</label>
               <select className="input" value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
                 {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
