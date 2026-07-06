@@ -10,7 +10,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   const order = await prisma.order.findUnique({
     where: { id: params.id },
-    include: { customer: true, invoice: true, cost: true },
+    include: {
+      customer: true,
+      invoice: true,
+      cost: true,
+      parts: { orderBy: { sortOrder: "asc" }, include: { steps: { orderBy: { sequence: "asc" } } } },
+      finalSteps: { orderBy: { sequence: "asc" } },
+    },
   });
   if (!order) return NextResponse.json({ error: "Tapılmadı" }, { status: 404 });
   return NextResponse.json(order);

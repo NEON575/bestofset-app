@@ -96,11 +96,47 @@ model Order {
   deliveryDate     DateTime?
   invoice          Invoice?
   cost             Cost?
+  parts            ProductionPart[]
+  finalSteps       ProductionStep[] @relation("OrderFinalSteps")
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
   @@index([customerId])
   @@index([status])
+}
+
+/// Sifarişin paralel gedən iş hissəsi (məs: "İç vərəqlər", "Üz qabığı").
+model ProductionPart {
+  id         String           @id @default(cuid())
+  orderId    String
+  order      Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name       String
+  material   String?
+  printColor String?
+  printSides String?
+  note       String?
+  sortOrder  Int              @default(0)
+  steps      ProductionStep[]
+  createdAt  DateTime         @default(now())
+
+  @@index([orderId])
+}
+
+/// İş hissəsinə (partId) və ya sifarişin birləşmə mərhələsinə (orderId) aid ardıcıl addım.
+model ProductionStep {
+  id          String          @id @default(cuid())
+  partId      String?
+  part        ProductionPart? @relation(fields: [partId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?          @relation("OrderFinalSteps", fields: [orderId], references: [id], onDelete: Cascade)
+  name        String
+  sequence    Int
+  status      String    @default("GOZLEYIR") // GOZLEYIR, BASLANIB, BITIB
+  completedAt DateTime?
+  note        String?
+
+  @@index([partId])
+  @@index([orderId])
 }
 
 model Invoice {

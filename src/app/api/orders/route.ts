@@ -27,7 +27,11 @@ export async function GET(req: NextRequest) {
           }
         : {}),
     },
-    include: { customer: { select: { name: true } } },
+    include: {
+      customer: { select: { name: true } },
+      parts: { select: { steps: { select: { status: true } } } },
+      finalSteps: { select: { status: true } },
+    },
     orderBy: { orderDate: "desc" },
   });
 

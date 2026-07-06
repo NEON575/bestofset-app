@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   fmtMoney,
   fmtDate,
@@ -275,7 +276,9 @@ export default function OrdersPage() {
             )}
             {orders.map((o) => (
               <tr key={o.id}>
-                <td className="font-mono">{o.number}</td>
+                <td className="font-mono">
+                  <Link href={`/orders/${o.id}`} className="text-cyan hover:underline">{o.number}</Link>
+                </td>
                 <td className="font-mono text-inksoft">{fmtDate(o.orderDate)}</td>
                 <td>{o.customer?.name}</td>
                 <td>{o.productName}</td>

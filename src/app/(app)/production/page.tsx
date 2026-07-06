@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { PRODUCTION_STATUS_LABELS } from "@/lib/format";
 
+interface Step { status: string; }
+interface Part { steps: Step[]; }
 interface Order {
   id: string;
   number: string;
@@ -10,6 +13,13 @@ interface Order {
   quantity: number;
   productionStatus: string;
   status: string;
+  parts: Part[];
+  finalSteps: Step[];
+}
+
+function stepProgress(o: Order): { done: number; total: number } {
+  const steps = [...o.parts.flatMap((p) => p.steps), ...o.finalSteps];
+  return { done: steps.filter((s) => s.status === "BITIB").length, total: steps.length };
 }
 
 const STAGES = ["DIZAYN", "CAP", "KESIM", "LAMINASIYA", "BITIB"];
@@ -63,12 +73,21 @@ export default function ProductionPage() {
                     Boşdur
                   </div>
                 )}
-                {stageOrders.map((o) => (
+                {stageOrders.map((o) => {
+                  const progress = stepProgress(o);
+                  return (
                   <div key={o.id} className="card p-3">
-                    <div className="font-mono text-xs text-inksoft mb-1">{o.number}</div>
+                    <Link href={`/orders/${o.id}`} className="font-mono text-xs text-cyan hover:underline block mb-1">
+                      {o.number}
+                    </Link>
                     <div className="font-semibold text-sm mb-1">{o.customer?.name}</div>
                     <div className="text-sm mb-1">{o.productName}</div>
                     <div className="text-xs text-inksoft mb-2">Say: {o.quantity}</div>
+                    {progress.total > 0 && (
+                      <div className="text-xs text-inksoft mb-2">
+                        {progress.done}/{progress.total} addım bitib
+                      </div>
+                    )}
                     {stage !== "BITIB" && (
                       <button
                         onClick={() => advance(o)}
@@ -79,7 +98,8 @@ export default function ProductionPage() {
                       </button>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           );
