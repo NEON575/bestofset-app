@@ -49,3 +49,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 400 })
   }
 }
+export async function GET() {
+  return NextResponse.json({
+    hasToken: !!process.env.AGENT_TOKEN,
+    length: process.env.AGENT_TOKEN?.length ?? 0,
+  })
+}
