@@ -1,0 +1,34 @@
+# Asılılıqlar və build çıxışları (konteynerdə yenidən qurulur)
+node_modules
+.next
+out
+build
+dist
+
+# Git və version-control
+.git
+.gitignore
+
+# Ətraf mühit / məxfi
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Loglar və müvəqqəti fayllar
+*.log
+npm-debug.log*
+tsconfig.tsbuildinfo
+next-env.d.ts
+
+# Redaktor / OS
+.vscode
+.idea
+.DS_Store
+.claude
+
+# Sənədlər
+README.md
