@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { fmtMoney, fmtDate, PAYMENT_STATUS_LABELS } from "@/lib/format";
 import Modal from "@/components/Modal";
 
-interface InventoryItem { id: string; name: string; unit: string; }
+interface InventoryItem { id: string; name: string; unit: string; category: string | null; balance: number; }
 interface Supplier { id: string; name: string; }
 interface Purchase {
-  id: string; date: string; supplier: { name: string }; item: { name: string; unit: string };
+  id: string; date: string; supplier: { name: string }; item: { name: string; unit: string; category: string | null };
   quantity: number; price: number; total: number; paymentStatus: string;
 }
 
@@ -15,26 +15,41 @@ export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [filterCategory, setFilterCategory] = useState("");
+  const [formCategory, setFormCategory] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ supplierId: "", itemId: "", quantity: "", price: "", paymentStatus: "ODENILMEYIB" });
   const [error, setError] = useState("");
 
   async function load() {
-    const [pRes, iRes, sRes] = await Promise.all([
+    const [pRes, iRes, sRes, cRes] = await Promise.all([
       fetch("/api/purchases"),
       fetch("/api/inventory"),
       fetch("/api/suppliers"),
+      fetch("/api/settings/options?category=MATERIAL_CATEGORY"),
     ]);
     setPurchases(await pRes.json());
     setItems(await iRes.json());
     setSuppliers(await sRes.json());
+    setCategories((await cRes.json()).map((o: { value: string }) => o.value));
   }
   useEffect(() => { load(); }, []);
 
   function openNew() {
+    setFormCategory("");
     setForm({ supplierId: suppliers[0]?.id || "", itemId: items[0]?.id || "", quantity: "", price: "", paymentStatus: "ODENILMEYIB" });
     setError(""); setShowModal(true);
   }
+
+  // Kateqoriya dəyişəndə material dropdown-u həmin kateqoriyaya süzülür və seçim sıfırlanır.
+  function onFormCategoryChange(cat: string) {
+    setFormCategory(cat);
+    setForm((f) => ({ ...f, itemId: "" }));
+  }
+
+  const formItems = formCategory ? items.filter((i) => i.category === formCategory) : items;
+  const visiblePurchases = filterCategory ? purchases.filter((p) => p.item.category === filterCategory) : purchases;
 
   async function save() {
     if (!form.supplierId || !form.itemId || !form.quantity || !form.price) { setError("Təchizatçı, material, say və qiyməti doldurun"); return; }
@@ -47,23 +62,29 @@ export default function PurchasesPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold mb-1">Alışlar</h1>
           <p className="text-inksoft text-sm">{purchases.length} alış · cəmi {fmtMoney(total)}</p>
         </div>
-        <button onClick={openNew} className="btn">+ Yeni alış</button>
+        <div className="flex gap-2 items-center">
+          <select className="input !w-auto" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+            <option value="">Bütün kateqoriyalar</option>
+            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button onClick={openNew} className="btn">+ Yeni alış</button>
+        </div>
       </div>
 
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>Tarix</th><th>Təchizatçı</th><th>Material</th><th>Say</th><th>Qiymət</th><th>Cəmi</th><th>Ödəniş statusu</th></tr>
+            <tr><th>Tarix</th><th>Təchizatçı</th><th>Material</th><th>Kateqoriya</th><th>Say</th><th>Qiymət</th><th>Cəmi</th><th>Ödəniş statusu</th></tr>
           </thead>
           <tbody>
-            {purchases.length === 0 && <tr><td colSpan={7} className="text-center text-inksoft py-8">Hələ alış yoxdur</td></tr>}
+            {visiblePurchases.length === 0 && <tr><td colSpan={8} className="text-center text-inksoft py-8">Alış yoxdur</td></tr>}
             <AnimatePresence initial={false}>
-              {purchases.map((p) => (
+              {visiblePurchases.map((p) => (
                 <motion.tr
                   key={p.id}
                   layout
@@ -75,6 +96,7 @@ export default function PurchasesPage() {
                   <td className="font-mono text-inksoft">{fmtDate(p.date)}</td>
                   <td>{p.supplier?.name || "—"}</td>
                   <td>{p.item.name}</td>
+                  <td className="text-inksoft">{p.item.category || "—"}</td>
                   <td className="font-mono">{p.quantity} {p.item.unit}</td>
                   <td className="font-mono">{fmtMoney(p.price)}</td>
                   <td className="font-mono">{fmtMoney(p.total)}</td>
@@ -93,9 +115,19 @@ export default function PurchasesPage() {
                 <option value="">— seçin —</option>
                 {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select></div>
+            <div className="mb-3"><label className="block text-xs font-semibold text-inksoft mb-1">Kateqoriya</label>
+              <select className="input" value={formCategory} onChange={(e) => onFormCategoryChange(e.target.value)}>
+                <option value="">— hamısı —</option>
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select></div>
             <div className="mb-3"><label className="block text-xs font-semibold text-inksoft mb-1">Material</label>
               <select className="input" value={form.itemId} onChange={(e) => setForm({ ...form, itemId: e.target.value })}>
-                {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                <option value="">— seçin —</option>
+                {formItems.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name} ({i.category ? `${i.category} — ` : ""}qalıq: {i.balance} {i.unit})
+                  </option>
+                ))}
               </select></div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div><label className="block text-xs font-semibold text-inksoft mb-1">Say</label>
