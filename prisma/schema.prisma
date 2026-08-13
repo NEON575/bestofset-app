@@ -97,6 +97,7 @@ model Order {
   deliveryDate     DateTime?
   invoice          Invoice?
   costItems        CostItem[]
+  materialUsages   MaterialUsage[]
   parts            ProductionPart[]
   finalSteps       ProductionStep[] @relation("OrderFinalSteps")
   createdAt        DateTime          @default(now())
@@ -204,16 +205,36 @@ model CostItem {
 }
 
 model InventoryItem {
-  id            String     @id @default(cuid())
+  id            String          @id @default(cuid())
   name          String
   unit          String
-  incoming      Float      @default(0)
-  outgoing      Float      @default(0)
-  balance       Float      @default(0)
-  purchasePrice Float      @default(0)
+  category      String?         // SettingOption(category="MATERIAL_CATEGORY")-dan seçim
+  size          String?         // ölçü, məs: "64x90 sm" və ya "A4"
+  grammage      Float?          // qramaj, məs: 80, 300 (kağız üçün)
+  minThreshold  Float           @default(0) // minimum hədd
+  incoming      Float           @default(0)
+  outgoing      Float           @default(0)
+  balance       Float           @default(0)
+  purchasePrice Float           @default(0)
   note          String?
   purchases     Purchase[]
-  createdAt     DateTime   @default(now())
+  usages        MaterialUsage[]
+  createdAt     DateTime        @default(now())
+}
+
+/// Bir sifarişdə istifadə olunan anbar materialı (çıxış anbardan silinir).
+model MaterialUsage {
+  id        String        @id @default(cuid())
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      InventoryItem @relation(fields: [itemId], references: [id])
+  quantity  Float
+  note      String?
+  createdAt DateTime      @default(now())
+
+  @@index([orderId])
+  @@index([itemId])
 }
 
 model Supplier {

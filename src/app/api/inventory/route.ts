@@ -27,6 +27,10 @@ export async function POST(req: NextRequest) {
     data: {
       name: body.name,
       unit: body.unit,
+      category: body.category || null,
+      size: body.size || null,
+      grammage: body.grammage !== undefined && body.grammage !== "" ? parseFloat(body.grammage) : null,
+      minThreshold: parseFloat(body.minThreshold || 0),
       incoming,
       outgoing,
       balance: calcInventoryBalance(incoming, outgoing),

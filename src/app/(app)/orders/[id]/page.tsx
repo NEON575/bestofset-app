@@ -31,6 +31,20 @@ interface CostItem {
   note: string | null;
 }
 
+interface MaterialUsage {
+  id: string;
+  quantity: number;
+  note: string | null;
+  item: { name: string; unit: string };
+}
+
+interface InventoryOption {
+  id: string;
+  name: string;
+  unit: string;
+  balance: number;
+}
+
 interface OrderDetail {
   id: string;
   number: string;
@@ -43,6 +57,7 @@ interface OrderDetail {
   parts: Part[];
   finalSteps: Step[];
   costItems: CostItem[];
+  materialUsages: MaterialUsage[];
 }
 
 const emptyPartForm = { name: "", material: "", printColor: "", printSides: "" };
@@ -79,14 +94,24 @@ export default function OrderDetailPage() {
   const [costTypes, setCostTypes] = useState<string[]>([]);
   const [showNewCost, setShowNewCost] = useState(false);
   const [costForm, setCostForm] = useState({ category: "", amount: "", note: "" });
+  const [materials, setMaterials] = useState<InventoryOption[]>([]);
+  const [showNewMaterial, setShowNewMaterial] = useState(false);
+  const [materialForm, setMaterialForm] = useState({ itemId: "", quantity: "", note: "" });
+  const [materialWarning, setMaterialWarning] = useState("");
 
   async function load() {
     const res = await fetch(`/api/orders/${orderId}`);
     if (res.ok) setOrder(await res.json());
   }
 
+  async function loadMaterials() {
+    const res = await fetch("/api/inventory");
+    if (res.ok) setMaterials(await res.json());
+  }
+
   useEffect(() => {
     load();
+    loadMaterials();
     fetch("/api/settings/options?category=COST_TYPE")
       .then((r) => r.json())
       .then((opts: { value: string }[]) => setCostTypes(opts.map((o) => o.value)));
@@ -218,6 +243,38 @@ export default function OrderDetailPage() {
     if (!confirm("Bu xərc sətrini silmək istədiyinizə əminsiniz?")) return;
     await fetch(`/api/orders/${orderId}/costs/${costId}`, { method: "DELETE" });
     load();
+  }
+
+  async function addMaterial() {
+    const quantity = parseFloat(materialForm.quantity);
+    if (!materialForm.itemId || isNaN(quantity) || quantity <= 0) {
+      setError("Material və miqdar tələb olunur");
+      return;
+    }
+    const res = await fetch(`/api/orders/${orderId}/materials`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: materialForm.itemId, quantity, note: materialForm.note }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Xəta baş verdi");
+      return;
+    }
+    setMaterialForm({ itemId: "", quantity: "", note: "" });
+    setShowNewMaterial(false);
+    setError("");
+    setMaterialWarning(data.warning || "");
+    load();
+    loadMaterials();
+  }
+
+  async function removeMaterial(usageId: string) {
+    if (!confirm("Bu material istifadəsini silmək istədiyinizə əminsiniz? Anbara geri qaytarılacaq.")) return;
+    await fetch(`/api/orders/${orderId}/materials/${usageId}`, { method: "DELETE" });
+    setMaterialWarning("");
+    load();
+    loadMaterials();
   }
 
   if (!order) return <div className="text-inksoft text-sm">Yüklənir...</div>;
@@ -465,6 +522,67 @@ export default function OrderDetailPage() {
             <div className="text-xs text-inksoft mb-0.5">Mənfəət</div>
             <div className={`font-mono font-semibold ${profit >= 0 ? "text-teal" : "text-magenta"}`}>{fmtMoney(profit)}</div>
           </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3 mt-8">
+        <h2 className="text-lg font-bold">İstifadə olunan materiallar</h2>
+        <button
+          onClick={() => {
+            setShowNewMaterial(!showNewMaterial);
+            setMaterialForm({ itemId: materials[0]?.id || "", quantity: "", note: "" });
+          }}
+          className="btn-outline text-xs"
+        >
+          + Material əlavə et
+        </button>
+      </div>
+
+      <div className="card p-4">
+        {materialWarning && (
+          <div className="text-xs text-yellow bg-yellow/10 border border-yellow rounded-md px-3 py-2 mb-3">
+            ⚠ {materialWarning}
+          </div>
+        )}
+
+        {showNewMaterial && (
+          <div className="flex flex-wrap items-end gap-2 mb-3 pb-3 border-b border-line">
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-semibold text-inksoft mb-1">Material</label>
+              <select className="input" value={materialForm.itemId} onChange={(e) => setMaterialForm({ ...materialForm, itemId: e.target.value })}>
+                <option value="">— seçin —</option>
+                {materials.map((m) => <option key={m.id} value={m.id}>{m.name} (qalıq: {m.balance} {m.unit})</option>)}
+              </select>
+            </div>
+            <div className="w-28">
+              <label className="block text-xs font-semibold text-inksoft mb-1">Miqdar</label>
+              <input type="number" min="0" step="0.01" className="input" value={materialForm.quantity} onChange={(e) => setMaterialForm({ ...materialForm, quantity: e.target.value })} />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-xs font-semibold text-inksoft mb-1">Qeyd</label>
+              <input className="input" value={materialForm.note} onChange={(e) => setMaterialForm({ ...materialForm, note: e.target.value })} />
+            </div>
+            <button onClick={addMaterial} className="btn">Əlavə et</button>
+          </div>
+        )}
+
+        {order.materialUsages.length === 0 && !showNewMaterial && (
+          <div className="text-sm text-inksoft text-center py-4">Hələ material əlavə edilməyib</div>
+        )}
+
+        <div className="flex flex-col gap-1.5">
+          {order.materialUsages.map((u) => (
+            <div key={u.id} className="flex items-center justify-between gap-2 bg-paperalt rounded-md px-2.5 py-1.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-semibold text-sm">{u.item.name}</span>
+                {u.note && <span className="text-xs text-inksoft truncate">· {u.note}</span>}
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-mono text-sm">{u.quantity} {u.item.unit}</span>
+                <button onClick={() => removeMaterial(u.id)} className="text-magenta text-xs hover:underline">Sil</button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

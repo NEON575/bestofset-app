@@ -14,6 +14,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       customer: true,
       invoice: true,
       costItems: { orderBy: { createdAt: "asc" } },
+      materialUsages: {
+        orderBy: { createdAt: "asc" },
+        include: { item: { select: { name: true, unit: true } } },
+      },
       parts: { orderBy: { sortOrder: "asc" }, include: { steps: { orderBy: { sequence: "asc" } } } },
       finalSteps: { orderBy: { sequence: "asc" } },
     },

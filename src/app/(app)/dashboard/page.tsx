@@ -15,6 +15,7 @@ interface DashboardData {
   customerDebts: number;
   totalCost: number;
   totalProfit: number;
+  lowStockItems: { id: string; name: string; unit: string; balance: number; minThreshold: number }[];
   activeOrders: any[];
   recentInvoices: any[];
   recentPayments: any[];
@@ -70,6 +71,30 @@ export default function DashboardPage() {
           </motion.div>
         ))}
       </motion.div>
+
+      <div className="mb-8">
+        <h2 className="font-semibold text-base mb-2">Azalan materiallar</h2>
+        {data.lowStockItems.length === 0 ? (
+          <div className="card p-4 text-sm text-inksoft">Bütün materiallar kifayət qədərdir</div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Material</th><th>Cari qalıq</th><th>Minimum hədd</th></tr>
+              </thead>
+              <tbody>
+                {data.lowStockItems.map((m) => (
+                  <tr key={m.id} className="bg-magenta/10">
+                    <td>{m.name}</td>
+                    <td className="font-mono font-semibold">{m.balance} {m.unit}</td>
+                    <td className="font-mono text-inksoft">{m.minThreshold} {m.unit}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <div>

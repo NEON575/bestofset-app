@@ -20,6 +20,7 @@ export async function GET() {
     monthInvoices,
     debts,
     costs,
+    inventoryItems,
     activeOrders,
     recentInvoices,
     recentPayments,
@@ -41,6 +42,9 @@ export async function GET() {
     prisma.debt.findMany({ where: { status: "ACIQ" } }),
     prisma.costItem.findMany({
       select: { orderId: true, amount: true, order: { select: { finalTotal: true } } },
+    }),
+    prisma.inventoryItem.findMany({
+      select: { id: true, name: true, unit: true, balance: true, minThreshold: true },
     }),
     prisma.order.findMany({
       where: { status: { in: ["GOZLEYIR", "ISDEDIR"] } },
@@ -91,6 +95,9 @@ export async function GET() {
     totalProfit += sale - cost;
   }
 
+  // Qalığı minimum həddə çatmış/aşmış materiallar.
+  const lowStockItems = inventoryItems.filter((i) => i.balance <= i.minThreshold);
+
   return NextResponse.json({
     activeOrderCount,
     deliveredOrderCount,
@@ -102,6 +109,7 @@ export async function GET() {
     customerDebts: round2(customerDebts),
     totalCost: round2(totalCost),
     totalProfit: round2(totalProfit),
+    lowStockItems,
     activeOrders,
     recentInvoices,
     recentPayments,

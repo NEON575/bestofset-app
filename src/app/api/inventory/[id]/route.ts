@@ -20,6 +20,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     data: {
       name: body.name ?? existing.name,
       unit: body.unit ?? existing.unit,
+      category: body.category !== undefined ? body.category || null : existing.category,
+      size: body.size !== undefined ? body.size || null : existing.size,
+      grammage:
+        body.grammage !== undefined
+          ? body.grammage === "" ? null : parseFloat(body.grammage)
+          : existing.grammage,
+      minThreshold: body.minThreshold !== undefined ? parseFloat(body.minThreshold) : existing.minThreshold,
       incoming,
       outgoing,
       balance: calcInventoryBalance(incoming, outgoing),
